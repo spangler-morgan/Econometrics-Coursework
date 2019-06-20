@@ -1,0 +1,328 @@
+---
+output:
+  pdf_document: default
+header-includes:
+  - \usepackage{setspace}\onehalfspacing
+  - \usepackage{ amssymb }
+  - \usepackage{amsmath}
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{ wasysym }
+geometry: margin=0.4in
+---
+\fontfamily{arial}
+\fontsize{6}{6}
+\selectfont
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, fig.pos='h')
+```
+
+*Treatment and causality* Start with our naive estimator (differencing the group means):
+$\hat{\Delta}_n=\bar{y}_{1,i}-\bar{y}_{0,i}$ such that $D_{i,j}$ is the treated state.
+This doesn't tell us anything about the causal relationship. 
+
+Formal model of causality
+(i) Let $D_i \in {0,1}$ index the $i^{th}$ individual's treatment status, (ii) Everyone has two possible outcomes, treated ($Y_{1,i}$) or untreated ($Y_{0,i}$), and (iii) Impact of treatment for the $i^{th}$ person is $\Delta_i=Y_{1,i}-Y_{0,i}$
+
+Average treatment effect estimand: $E(\Delta_i)=\Delta^{ATE}=E(Y_{1,i})-E(Y_{0,i})$  
+This still leaves us with a missing counterfactual. With the means from our naive estimator defined as such, $\bar{y}_{1,i} = Pr(D_i=1)E(Y_{1,i}|D_i=1)+Pr(D_i=0)E(Y_{1,i}|D_i=0), \ \bar{y}_{0,i}= Pr(D_i=0)E(Y_{0,i}|D_i=0)+Pr(D_i=1)E(Y_{0,i}|D_i=1)$
+the missing counterfactual is the missing right-hand side of the equation. We are able to assume $E(Y_{1,i}|D_i=1)=E(Y_{1,i}|D_i=0)$ and $E(Y_{0,i}|D_i=0)=E(Y_{0,i}|D_i=1)$ only when receiving the treatment is truly random. To get around this issue, we can instead find the impact of the treatment on the treated.
+
+Affect of treatment on the treated estimand: $\Delta^{ATT}=E(Y_{1,i}|D_i=1)-E(Y_{0,i}|D_i=1)$ Or, the average treatment on the untreated, $\Delta^{ATN}=E(Y_{1,i}|D_i=0)-E(Y_{0,i}|D_i=0)$ These estimands are related by this identity: $\Delta^{ATE}=Pr(D_i=1)\Delta^{ATT}+Pr(D_i=0)\Delta^{ATN}$
+
+*Canonical model*
+$$Y_{1,i}=g_1(X_i)+\epsilon_{1,i}, \ Y_{0,i}=g_0(X_i)+\epsilon_{0,i}, \ 
+D^*_i=h(X_i,Z_i)+\epsilon_{D,i} \ 
+X_i = observables, \ \epsilon_{j,i}=unobservables, \  Z_i=instruments$$
+$D^*_i$ is a latent, unobserved variable, but $D_i=1$ if $D_i^*\geq 0$.
+
+If $Cov(x_i,\epsilon_i)=0$ but $Cov(D_i,\epsilon_i)\neq 0$, the OLS model is biased and we use instrumental variables (2SLS).
+
+*Idealized Experiments* $ Y_{1,i}=g_1(X_i,U_i), \ Y_{0,i}=g_0(X_i,U_i), \ D_i=R_i, \ U_i = unobserved$, $D_i= R_i$, $R_i=1$ when $i$ is assigned to treatment, $R_i=0$ when $i$ is assigned to control. (ideal because in this everyone honors the protocol, $D_i=R_i$_
+
+As long as treatment assignment is random, the counterfactual problem is solved. We can solve for ATE  differencing the means, or solve by running an OLS regression, $y_i=x_i\beta + \delta R_i + e_i$, $E(\hat{\Delta}^{ATE})=E(\hat{\delta})$. Both $\hat{\Delta}^{ATE}$ and $\hat{\delta}$ are estimators of the estimand, $\Delta^{ATE}$.
+
+*Not Idealized Experiments* Impact of the intent to treat: $\Delta^{ITT}=E(Y|R_i=1)-E(Y|R_i=0) \\ Y_i=D_iY_{1,i}+(1-D_i)Y_{0,i}$ (this tells you the change in the mean value of $Y$ by being assigned to the treatment)
+
+We add a monotonicity assumption, $D_i(R_i=1)\geq D_i(R_i=0) \forall i$, to find the impact of the actual treatment (the Bloom estimand)
+$$\Delta^B=\frac{E(Y|R_i=1)-E(Y|R_i=0)}{E(D_i|R_i=1)-E(D_i|R_i=0)}$$
+estimated with $\hat\Delta^B=\frac{\bar{y}_{R_i=1}-\bar{y}_{R_i=0}}{\bar{D}_{R_i=1}-\bar{D}_{R_i=0}}$
+
+* The monotonicity assumption lets us divide the group into always takers ($p_a$), never takers ($p_n$), and compliers ($p_c$), $p_a+p_n+p_c=1$
+    + $E(Y|R_i=1)=p_nE(Y_{0,i}|n)+p_cE(Y_{1,i}|c)+p_aE(Y_{1,i}|a)$
+    + $E(Y|R_i=0)=p_nE(Y_{0,i}|n)+p_cE(Y_{0,i}|c)+p_aE(Y_{1,i}|a)$
+    + $E(Y|R_i=1)-E(Y|R_i=0)=p_cE(Y_{1,i}-Y_{1,i}|c)$
+
+The Bloom estimand simplifies to estimating the impact of treatment for those who comply with the protocol, $\Delta^B=E(Y_{1,i}-Y_{1,i}|c)$  
+
+* The Bloom estimand is referred to as the Local Average Treatment Effect (LATE)
+
+*OLS*
+As a minimum distance estimator solves $min_\beta V=\sum_{i=1}^n(y_i-x_i\beta)^2$. The solution, $\hat\beta$ is the minimized difference between each $y_i$ and its predicted value $\hat y_i$, $\hat y_i=x_i\hat \beta$.
+
+* $V$ is strictly convex in $\beta$ under conditions on $X$ which makes the solution unique.
+  
+As a method of moments estimator $\min_\beta V=\sum_{i=1}^n(y_i-x_i\beta)^2$ with necessary conditions $\bar{y} - \bar{x} \dot \hat{\beta} =0$
+$s_{y,x_j}-\hat \beta_1s_{x_1,x_j}-\hat \beta_2s_{x_2,x_j}...-\hat \beta_k s_{x_k,x_j}=0, \ \forall x_j$
+$s_{y,x_j}$ = cov($y,x_j$)
+  
+As a MLE estimator: let $y_i=x_i\beta + \epsilon_i$ and assume that $\epsilon_i \sim^d N(0,\sigma^2)$. We form a likelihood function, $L(\beta)=\Pi_{i=1}^n\phi(\frac{y_i-x_i\beta}{\sigma})=\Pi_{i=1}^n(2\pi\sigma^2)^{\frac{-1}{2}e^{\frac{-1}{2\sigma^2}(y_i-x_i\beta)^2}}$
+As long as $f(x)>0$, $x^*$ solves $\max_x\ln(f(x))$. Thus, we can work with $$\ell(\beta)=\frac{-n}{2} \ln(2\pi\sigma^2)-\frac{1}{2\sigma^2}\sum_{i=1}^n(y_i-x_i\beta)^2$$
+Which is simplified to $\tilde{\ell}(\beta)=\sum_{i=1}^n(y_i-x_i\beta)^2$
+
+* By Cramer Rao Theorem: Suppose $\Theta^{MLE}$ is an unbiased estimator of $\Theta$. Then, for any other unbiased estimator of $\Theta$, $\Theta^*$, we have $var(\Theta^*)\geq var(\Theta^{MLE})$. Thus, the MLE estimate of $\Theta$ is the MVUE of $\Theta$.
+* If the model is correctly specified, MLE estimates are consistent, asymptotically normal, and invariant under monotone transformations. If the model is incorrectly specified, MLE estimates will still provide good fits of data within sample.
+
+As a Weighting Estimator: Consider the matrix form of the OLS estimator, $y$ is a $(n\times 1)$ vector, $x$ is a $(n\times k)$ matrix, and $\beta$ is a $(k\times 1)$ vector. $\hat \beta = x'(x'x)^{-1}x'y$ so that $\hat \beta = wy$ where $w=x'(x'x)^{-1}x'$ where $w$ is a $(k\times n)$ vector.
+
+This means $\beta$ is formed by taking a weighted sum of the $y$'s where the weights are determined by the data.
+
+Suppose that $X$ takes on a small number of values, so there are $K<n$ "cells". Estimate the model
+$y_{i,j}=\delta D_{i,j}+\alpha_j+\epsilon_{i,j}$, $j$ indexes the "cell" of the data in $X$, $\alpha_j$ is the fixed effect for each $j$.
+
+Let $\Delta_j=\bar{y}_{1,j}-\bar{y}_{0,j}$, $\hat \delta = \sum_{j=1}^Kw_j\hat{\Delta}_j$ where $w_j=\frac{r_j(1-r_j)n_j}{\sum_{i=1}^Kr_i(1-r_i)n_i}$, $r_j=\Pr(D_j=1)$
+
+* The larger a particular cell, $n_j$, the more weight is put on it (larger cells encompass more of the data).
+* The weighted estimator works if treatment effects are homogenous. Not if they are heterogenous.
+
+*Fully Saturated OLS Models* Used when we have many more observations ($N$) than data cells ($K$), $K <<N$. We make OLS a fully nonparametric (no assumptions about functional form are made) regression by estimating $y_{1,i,j}=\alpha_{1,j}+\epsilon_{1,i,j}$, $y_{0,i,j}=\alpha_{0,j}+\epsilon_{0,i,j}$.
+The treatment effect for $X=x^)$ cell is $\Delta_k=E(Y_{1,i}-Y_{1,0}|X=x^k)$
+
+Generalize the canonical model slightly, $y_{1,i}=x_i' \beta_1 +\epsilon_{1,i}$, $y_{0,i}=x_i' \beta_0 +\epsilon_{0,i}$
+Now treatment effects can vary by $X$, ($\Delta(x^0)=x^0(\beta_1-\beta_0)$ when $X=x^0$).
+
+*Estimating Treatment Effects from Parameter Estimates* Key insight: both models provide a predicted value for $Y_{1,i}$ and $Y_{0,i}$ for each value of $x^0$ (term these $\Delta(x^0)$).
+
+Treatment group: construct $\hat \Delta_i=y_{1,i}-\hat y_{0,i}$, Control group: construct $\hat \Delta_i=\hat y_{1,i}-y_{0,i}$.
+
+Parametric case: 
+
+* $\hat \Delta^{ATE}=\bar(x)(\hat \beta_1-\hat \beta_0)$
+    + take the mean of $\hat\Delta_i$ for the whole sample
+* $\hat \Delta^{ATT}= \bar(x)_{D_i=1}(\hat \beta_1 - \hat \beta_0)$
+    + take the mean of $\hat\Delta_i$ for the treated portion of the sample
+* $\hat \Delta^{ATN}=\bar(x)_{D_i=0}(\hat \beta_1 - \hat \beta_0)$
+    + take the mean of $\hat\Delta_i$ for the untreated portion of the sample (bootstrap is recommended for standard errors)
+    
+    
+(i) The only difference between the treatment parameters arise from the differences among the means of the sample (treated and untreated), (ii) The sample means weight the differences of the $\beta$'s according to their relative frequency in the population of interest, (iii) This is a generalization of the canonical model (the canonical model requires that $\beta_1 = \beta_0$ except for in the constant)
+
+*Yule's Theorem* Yule's theorem states that you can treat any multiple regression as a single variable regression. Consider the canonical model,
+$$y_i=x_i\beta + \delta D_i + \epsilon_i$$
+Yule's theorem has you first run the regression $D_i=xb_D + u_{D,i}$, recover the predicted values, $\hat{D}_i$, and define the residual, $\tilde{y}_i=y_i-\hat{y}_i$ (the residuals $(\tilde{y}_i,\tilde{D}_i)$ are orthogonal to $X$ by construction).
+
+Run the "big" regression: $y_i=x_i\beta + \delta D_i + \epsilon_i$ and get estimate $\hat\delta^{big}$.
+And now run the "Yule" regression: $\tilde{y}_i=\delta\tilde{D}_i+\epsilon_{y,i}$ and get esimate $\hat\delta^{Yule}$.
+
+* By Yule's theorem, $\hat\delta^{big}=\hat\delta^{Yule}$ exactly.
+
+The standard errors are correct subject to a df adjustment, $se(\hat\delta^{Yule})\frac{n-1}{n-k}^\frac{1}{2}=se(\hat\delta^{OLS})$
+
+* a rank condition says the matrix of covariates must be of full rank ($R^2$ of the regression $D_i=x_ib_D+u_{D,i}$ cannot be 1 or close to 1)
+* unless the measurement error is correlated with $X$, the impact of measurement error is amplified when the number of covariates increases.
+
+Yule's theorem is also useful in getting an exact distribution of OLS estimates. Consider a simple regression (tilde's ignored)
+$$y_i=\delta D_i + \epsilon_i$$
+The OLS estimate is $$\hat\delta=\frac{s_{y,d}}{s_{D,D}}=\delta+\frac{s_{\epsilon,D}}{s_{D,D}}$$ where $s_{x,y}$ is the sample covariance ($s_{x,x}=$sample variance).
+Recall, $r_{x,y}=\frac{s_{x,y}}{s_x,s_y}$, we have $\hat\delta=\delta+r_{\epsilon,D}\frac{s_\epsilon}{s_D}$ where $s_\epsilon$ is the sample SD of $\epsilon$, $s_D$ is the SD in $D$, and $r_{\epsilon,D}$ is the sample correlation coefficient of ($\epsilon,D$).
+
+$\hat\delta=\delta+r_{\epsilon,D}\frac{s_\epsilon}{s_D}$. There are three parts to the error term:
+
+* $s_\epsilon$: the more unexplained variation in the regression (the larger $s_\epsilon$), the more error in the estimates
+* $s_d$: the more variation in $D$, the more precise your estimate
+* $r_{\epsilon,D}$: soure of the "sampling" variation of the estimates. While $E(r_{\epsilon,D})=0$, it could be positive or negative in finite samples.
+
+*2SLS* Old Style IV/2SLS: Find a $Z_i$ s.t. $Cov(z_i,\epsilon_i)=0$ but $Cov(D_i,z_i)\neq 0$ and $\{Z-i\cap X_i\}=\emptyset$ and then throw away the "bad variation" by running the regression $D_i=\gamma z_i + x_ib+\epsilon_{D,i}$ and recover the predicted value $\hat{D}_i$ and run the regression $y_i=\delta\hat{D}_i+x_i\beta+\epsilon_i$
+* 2SLS gives us a consistent estimator $(plim(\hat{\delta})=\delta)$
+1. Write $y_i=\delta D_i+\epsilon_i$ for our canonical OLS model and $y_i=\delta\hat{D}_i+\epsilon_i$  
+2. Solve $L=\min_{\delta}\sum_{i=1}^n(y_i-\delta\hat{D}_i)^2$
+3. Get $\frac{dL}{d\delta}=-2\sum_{i=1}^n\hat{D}_i(y_i-\hat{delta}\hat{D}_i)=0$ or $\sum_{i=1}^n\hat{D}_i(y_i-\hat{\delta}\hat{D}_i)=0$
+4. Solving gets us $\hat\delta^{2SLS}=\frac{\sum_{i=1}^n\hat{D}_iy_i}{\sum_{i=1}^n\hat{D}_i^2}=\frac{s_{y,D}}{s_{\hat{D},\hat{D}}}$
+
+$$\hat{\delta}^{IV}-\hat{\delta}^{OLS}=\frac{s_\epsilon}{s_D}(\frac{r_{\epsilon,z}}{r_{D,z}}-r_{\epsilon,D})$$
+* $r_{\epsilon,D}$ is the bias and the sampling variation
+* $\mathds{E}(r_{\epsilon,z})=0$, but in finite samples $r_{\epsilon,z}$ should be small
+* $SE(\delta^{IV})=\frac{SE(\delta^{OLS})}{r_{z,D}} \Rightarrow$ bias v. variance trade off
+
+*LATE*
+Stable Unit Treatment Value Assumption: Outcomes of $i$th individual are independent of others' outcomes
+Exclusion restriction: $Y_j(z=1)=Y_j(z=0) \forall j=0,1$
+Instrument assumption: $\mathds{E}(D|z=1)\neq\mathds{E}(D|z=0)$
+Monotonicity: $D_i(z=1)\geq D_i(z=0)$ or $D_i(z=1)\leq D_i(z=0) \forall i\in \{1,2,...,n\}$
+  
+$$\triangle^{\delta}=\frac{\mathds{E}(Y_i|z_i=1)-\mathds{E}(Y_i|z_i=0)}{\mathds{E}(D_i|z_i=1)-\mathds{E}(D_i|z_i=0)}=\mathds{E}(Y_{1,i}-Y_{0,i}|C)$$
+* Ex: Assume the treatment is binary $Z_i\in \{0,1\}$ and $D_i\in\{0,1\}$. Assume that we meet all of the LATE assumptions and in the null hypothesis we assume that CIA: $D_i \ {\perp\!\!\!\perp} \ (Y_{0,i},Y_{1,i})|X_i$. If this null assumption is true (no selection bias), there is no need for IV. To test this, we pick some functional form for $y$ (like $y_{D_i,i}=x_i\beta_{D_i}+\epsilon_{D_i,i}$) and simply add the instrument to make sure it has no impact on $(Y_{0,i},Y_{1,i})$, ($y_{D_i,i}=x_i\beta_{D_i}+\alpha_{D_i}z_i+\epsilon_{D_i,i}$). If either parameter esimates ($\alpha$) are different than zero you have evidence of selection bias.
+    + To estimate the bias, $\hat{B}_0=-\frac{1-\bar{D}_{z=1}}{\bar{D}_{z=1}-\bar{D}_{z=0}}\hat{\alpha}_0$
+
+*Matching* Matching is used because it allows us to avoid selecting a conditional mean function, making it more flexible than OLS. 
+
+A typical matching model looks like
+$$Y_{1,i}=g_1(X_i)+\epsilon_{1,i}$$ $$Y_{0,i}=g_0(X_i)+\epsilon_{0,i},$$ where $D_i$ is the treatment indicator and $g_{j={0,1}}(X_i)$ are unknown functions. 
+
+The key assumption for matching is the Conditional Independence Assumption:
+$$(Y_{1,i},Y_{0,i}) \ {\perp\!\!\!\perp} \ D_i|X$$
+
+* This corresponds to the exogeneity assumption in OLS
+
+Matching also relies on the Common Support Assumption: $0<\Pr(D_i|X=x^))<1 \forall x^0$. This simply keeps us from making projections where we have no data.
+
+If we are interested in the $\Delta^{ATT}$, our only missing counterfactual in the data is $Y_{0,i}$ so we only need $Y_0,i {\perp\!\!\!\perp} D_i|X$.
+
+*Rosenbaum-Rubin Theorem* If $p(x)=\Pr(D=1|X)$ is the probability of being treated and $(Y_{1,i},Y_{0,i}) \ {\perp\!\!\!\perp} \ D_i|X$ then $(Y_{1,i},Y_{0,1}) \ {\perp\!\!\!\perp} \ D_i|P(X)$
+
+* This tells us that conditioning on the propensity score is just as good as conditioning on $X$
+    + $\Rightarrow$ need to understand the estimation for these kinds of models
+    
+Keep in mind that as either $p(x)$ or $(1-p(x))$ approach 0 there is substantial degradation in the estimates. 
+    
+*Discrete Choice Models* Probability of treatment, $\Pr(D_i=1|X)$ is a function of the distribution of $v$, $\Pr(D_i|x)=\int_{-h(x_i)}^\infty f(v)dv$ where $f(v)$ is the probability density function of $v$.
+
+* By specifying the distribution function, $f(v)$, and the functional form of $h(x)$, we are able to estimate $\Pr(D_i=1|X)$.
+    + we often don't have this much information
+
+Two different approaches are the Probit and Logit models
+
+*Parametric Models: Probits* $\Pr(D_i=1|X)=\int_{-h(x_i)}^\infty f(v)dv$ or $\Pr(D_i=1|X)=1-F(-h(x_i) \ and \ \Pr(d_i=0|X)=F(-h(x_i))$
+
+* This becomes a probit model by dividing by $\frac{h(x_i)}{\sigma}$ and letting $F(\dot)=\Phi(\dot)$
+
+$\Rightarrow \Pr(D_i=1|X)=1-\Phi(\frac{-h(x_i)}{\sigma})$ and $\Pr(D_i=0|X)=\Phi(\frac{-h(x_i)}{\sigma})$
+
+* Still need to set a function form of $h(x_i)$, so we choose $h(x_i)=x_i\beta$. We use this assumption to write a likelihood function.
+
+$\Rightarrow L(\beta)=\Pi_{i=1}^n\Phi(\frac{-x_i\beta}{\sigma})^(1-D_i)(1-\Phi(\frac{-x_i\beta}{\sigma}))^{D_i}$
+And, like usual, take the logarithm to solve:
+$\Rightarrow \ell(\beta)=\sum_{i-1}^n((1-D_i)\ln(\Phi(\frac{-x_i\beta}{\sigma}))+D_i\ln(1-\Phi(\frac{x_i\beta}{\sigma})))$
+Then solve the MLE (select $\beta$ to maximize the likelihood function).
+
+* $\Phi(\dot)$ rather than $\phi(\dot)$ has no closed form expression $\Rightarrow$ needs to be numerically approximated
+
+Estimate $\hat{\beta}^*$: $$\Pr(D_i=1|X)=1-\Phi(-x_i\hat{\beta}^*)$$ $$\Pr(D_i=0|X)=\Phi(-x_i\hat{\beta}^*)$$
+
+This gives us a probability of treatment and a measure of the utility differences between the treated and the untreated.
+
+Because probit estimates of $\beta^*$ are MLE estimates they are consistent, asymptotically normal, and invariant under monotonic transformations.
+
+*Marginal effects* Impact of increasing the probability of receiving treatment:
+$$\frac{\partial \Pr(D_i|X)}{\partial x_k}=\phi(-x_i \beta^*)\beta_k$$
+
+* the derivative's value depends on all values of the covariates, $x_i$
+* for probabilities very close to one or zero, the derivative is very close to zero (maximized when probability is .5)
+
+*Parametric Models: Logits* Logits are an older, still very relevant, option from when probits were too computationally intesive. $\Pr(D_i=1|X)=\frac{e^{x_i \beta}}{1+e^{x_i \beta}}$. This is equivalent to letting $F(x_i \beta)=1-\frac{e^{x_i \beta}}{1+e^{x_i \beta}}$, $\Pr(D_i=0|X)=1-\frac{e^{x_i \beta}}{1+e^{x_i \beta}}=\frac{1}{1+e^{x_i \beta}}$ which allows us to interpret the "log odds ratio" $\ln(\frac{\Pr(D_i=1|X)}{\Pr(D_i=0|X)})=x_i \beta$. So the likelihood function in this model is $L(\beta)=\Pi_{i=1}^n((\frac{1}{1+e^{x_i \beta}})^{1-D_i}(\frac{e^{x_i \beta}}{1+ e^{x_i \beta}})^{D_i})$ and the log likelihood function $\ell(\beta)=\sum_{i=1}^n((D-ix_i \beta)-\ln(1+e^{x_i \beta}))$
+
+(i) this has an explicit functional form but still must be solved numerically, (ii) marginally faster to compute than the probit, (iii) distribution of $v$ is a normed logistic distribution (thicker in the tails than the normal)
+
+$\Rightarrow$ results will be similar between the logit and probit models
+
+*Marginal effects* Impact of increasing the probability of receiving treatment:
+$$\frac{\partial \Pr(D_i|X)}{\partial x_k}=(1-P(x))P(x)\beta_k$$
+
+* the derivative's value depends on all values of the covariates, $x_i$
+* the magnitude of the derivative varies with $P(x)(1-P(x)) \Rightarrow$ max reached at $P(x)=0.5$
+* the derivative varying with probabilities ensures that we will never have a predicted value fall outside of the unit interval
+
+*Linear Probability Model (OLS)* It is generally a bad idea to enter continuous variables linearly because OLS requires a constant derivative. By entering higher order terms the derivative becomes nonconstant and we can usually insure $\hat {P}(x)$ is well behaved with enough terms and interactions.
+
+*Nonparametric estimators* $MSE \equiv E(\hat \theta - \theta)^2 = (\mu_{\hat \theta}-\theta)^2 + E(\hat \theta - \mu_{\hat \theta})^2=(B_{\hat \theta})^2+Var(\hat \theta)$
+$B$ is the bias of the estimator.
+$\Rightarrow$ there is a bias versus variance tradeoff when selecting an estimator.
+
+*Bins or step functions* Divide your data into $J$ "bins" of about equal size and estimating the resulting means for each bin. 
+Example: Generate 2,000 observations from $y=2+3\times X + 0.5 \times X^2 + \epsilon$, $X \sim^d N(0,9)$, $\epsilon \sim^d N(0,1000)$.
+Select some number of bins ($J=50$, for example) and predict the conditional mean function for $y_b$. Then, regress $y$ against the true mean condition $\hat y$ and the binned estimate $\hat y_b$ to compare the bin method to the true mean function (on goodness of fit, $R^2$). 
+
+*Kernel estimation* If you want to estimate $E(D_i|x_0)$, take observations that are $x$ "close" to $x_0$ and weight the observations by how close they are to $x_0$.
+
+$$Epanechnikov: K_e(x-x_0,h)=\frac{3}{4}(1-(\frac{x-x_0}{h})^2) \ \ \ if \ \ \ |(\frac{x-x_0}{h})|\leq 1, \ otherwise \ 0$$
+$$Gaussian: K_g(x-x_0,h)=\frac{1}{\sqrt{2\pi}}e^{\frac{-1}{2h}(x-x_0)^2}$$
+
+The kernel (doesn't matter which one) is used to construct weights, $w_i=\frac{K(x_i-x_0,h)}{\sum_{j=1}^n K(x_i-x_0,h)}$, notice $1=\sum_{i=1}^n w_i$. 
+
+Use the weights to estimate $\hat D(x_0)=\sum_{i=1}^nw_i D_i$ 
+and repeat this for each observation in the set.
+
+*Series esimator* The series estimator relies on *Weierstrass Approximation Theorem*: Any continuous function on a closed and bounded interval may be uniformly approximated to any degree of accuracy on that interval by a polynomial. 
+
+$$D_i=\sum_{j=0}^J \beta_j x_0^j +\epsilon_i$$
+In this model, the degree of the polynomial, $J$, is the smoothing parameter selected by the researcher.
+
+*Splines* General idea is to estimate a piecewise linear function on the interval by making $J$ breaks in order to make $J+1$ bins. Once the bins are made, you fit a linear function that is allowed to change slopes at the end of the segments.
+
+*K-fold validation* You choose a value $K$ ($K=5, 10, n$), and divide your sample into $K$ folds (five randomly selected subsets of data). Use the first fold to evaluate how well the estimates perform given a certain kernel by calculating the MSE for all proposed values of the bandwidth, $h$, you are considering. Save the calculations.
+Repeat this with the second fold, and so on. After doing all $K$ folds you sum up the total MSE. Then, pick the bandwidth that had the lowest MSE, or $RMSE\equiv \sqrt{MSE}$ (notice: you pick one $h$ for the whole sample, not each fold individually).
+
+*Inverse Probability Weighting (IPW)* IPW reweights the data so $F(X|D_i=1,w)=F(X|D_i=0,w)+F(X|w)$, where $w$ is some vector of weights. We then estimate the weighted least squared regression, $y_i=\beta_0 + \delta D_i + \epsilon_i$ with the data weighted so that $X_i {\perp\!\!\!\perp} D_i|w$. 
+
+* Remember, in least squares, the inclusion or exclusion of independent random variables does not effect the estimated coefficient.
+
+The propensity score from Rosenbaum and Rubin is used to construct $w$.
+
+
+|   Parameter  |     $w$ for treated obs    |   $w$ for untreated obs    |
+|--------------|:--------------------------:|:---------------------------|
+|     ATE      | $\frac{w_s}{p(x_j)}$       |    $\frac{w_s}{1-p(x_j)}$  |
+|     ATT      |      $w_s$                 |$w_s\frac{p(x_j)}{1-p(x_j)}$|
+|     ATN      |$w_s\frac{1-p(x_j)}{p(x_j)}$|         $w_s$              |
+
+where $w$ are your sample weights from the data. If no weights, $w_s=1$.
+
+Once you pick your weights, run two regressions,  
+Short: $y_i=\beta_0+\delta D_i+\epsilon_i$  
+Long: $y_i = x_i\beta + \delta D_i + \epsilon_i^*$  
+With discrete data, it is the case that $\hat{\delta}^S=\hat{\delta}^L$, exactly. The coefficients, $\beta$, are unimportant in this regression.
+
+This estimator calculates $\hat{\Delta}_i(x^0)=\bar{y}_{D=1,X=x^0}-\bar{y}_{D=0,X=x^0} \forall x^0$. and then aggregate them to a single number $\hat{\Delta}=\sum_{j=1}^{J}w_j\hat{\delta}(x^j)$.
+
+If you have truly continuous variable in your data, you simply run the short and long regressions and you will see that the estimates are still very close (though not exact). This is a *double robust* regression. It is recommended that you use a series estimator and then put it in a logit function for continuous variables.
+
+*Wald estimator* $\hat{\delta}^w=\bar{y}_{1,x\leq c+\chi_1}-\bar{y}_{0,x>c-\chi_0}$ where $\chi_1$ and $\chi_0$ are values of the calipers.
+
+*Local constant estimator* $\delta^{LC}=\sum_{x\leq c+\chi_1}w(x)y_1-\sum_{x>c-\chi_0}w(x)y_0$ where $w(x^0)=\frac{K(x^0,c,h)}{\sum K(x,c,h)}$
+    * The same as the Wald estimator with a kernel weight
+
+*Recommended Nonparametric Methods* For a large number of regressors: Dr. Black recommends using a series-type estimator with enough interaction terms. If the predictions are falling out of the unit interval, put the regression inside of a logit function.  
+For a small number of regressors: Dr. Black recommends using a fully saturated model. This will produce the same predicted conditional mean.
+
+*Goodness of Fit*
+
+* Log likelihood function: You can examine $\ell(\beta)$, which may be compared to the log likelihood with a constant and can be used to formulate the test for the significance of the covariates.
+* Log likelihood index $LDI=1-\frac{\ell(\beta)}{\ell({\beta_0})}$, where $\ell(\beta_0)$ is the log likelihood function only with a constant. Gives you a number between 0 and 1, but no natural interpretation.
+* Hit and miss table sets: $\tilde{y}_i=1$ when $\hat{P}(x_i)>C$ and $\tilde{y}_i=0$ when $\hat{P}(x_i)\leq C$. Often reported as a $2\times2$ table. C is usually 0.5, but arbitrary.
+* Black's recommendation: take the predicted values, $\hat{P(x_i)}$ and run the OLS regression $D_i=b_0+b_1\hat{P}(x_i)+u_i$. Use the $R^2$ from this regression to judge the goodness of fit of your estimation.
+
+*Regression Discountinuity* There is fuzzy regression discontinuity if there exists a $c$ such that $Pr(D=1|x\geq c)-Pr(D=1|x<c)=k>0$. Then, we want to estimate $\delta(c)=\lim_{x\downarrow c}\mathds{E}(Y_1|x)-\lim_{x\uparrow c}\mathds{E}(Y_0|x)$
+
+For estimating an OLS with calipers, select your calipers and use the regression $y=\beta_0+f_0(x-c)+f_1(x-c)D+\delta D+\epsilon$ and use $\hat{\delta}$ as the estimate.  
+For estimating an OLS with covariates and calipers, use $y=\beta_0+f_0(x-c)+f_1(x-c)D+Z\beta_1+\delta D+\epsilon$, where $Z$ is a vector of any covariates and we again use $\hat{\delta}$ as the estimate.
+    * Covariates should have little impact on estimates if your caliper is small
+    * Covariates may help a lot if you are using a big caliper because of data problems
+    * Covariates can reduce your variance estimates
+    
+How to estimate a fuzzy design:
+1. Want to estimate $\delta(c)=\frac{\lim_{x\downarrow c}\mathds{E}(Y_1|x)-\lim_{x\uparrow c}\mathds{E}(Y_0,x)}{\lim_{x\downarrow c}\mathds{E}(D|x)-\lim_{x\uparrow c}\mathds{E}(D|x)}$.
+2. We run an IV regression
+3. The Wald estimator, $\hat{\delta}^w=\frac{\bar{y}_{c\leq x< c+\chi_1}-\bar{y}_{c>x>c-\chi_0}}{\bar{D}_{c\leq x<c+\chi_1}-\bar{D}_{c>x>c-\chi_0}}$ where $\chi_1$ and $\chi_0$ are values of the calipers.
+4. Turn this into a regression by estimating a 2SLS model with $y=\beta_0+\beta_1(x-c)+\delta D+\epsilon$, $D=\alpha_0+\alpha_1 I_{[x\geq c]} + u$ where $I_{[x\geq c]}$ is an indicator function that is equal to one when $x\geq c$, and zero otherwise, and $\hat{\delta}$ is the estimate of interest.
+
+*Stratification*
+
+* Stratification reduces variance, so when you treat a stratified sample as an unstratified random sample you will overestimate the variance of your estiamtes.
+* When designing surveys, stratify anytime you have additional information about the population.  
+Assume there are 2 groups, 1 and 2, and $p$, $(0<p<1)$, fraction of the population is from group 1. What is $\mathds{E}(X|g)$? $\mathds{E}(X_s)=p\mathds{E}(X|g=1)+(1-p)\mathds{E}(X|g=2)=p\mu_1+(1-p)\mu_2=\mu$, where $X_s$ is drawn from the stratified sample.
+$Var(x_s)=p\sigma^2_1+(1-p)\sigma_2^2=\sigma^2$
+By stratifying on hundred of groups, this result generalizes to $Var(X_r)=\mathds{E}(Var(X_s|g))+Var(\mathds{E}(X_s|g))$ so that the variance is always reduced unless $Var(\mathds{E}(X_s|g))=0$.
+
+*Clustering* Suppose $m$ households and $n$ strata are sampled ($m$ is the same across all strata). If you let $\sigma^2_r$ be the variance of a mean under a simple random sample and $\sigma^2_c$ under a clustered random sample, it can be down $\sigma^2_c\approx \sigma^2_r(1+(m-1)\rho)$.
+  * If $\rho<0$, then standard errors are reduced. If $\rho=0$, the standard errors are the same (this is unlikely).
+  * At moderate correlations, you get a pretty big reduction in the sample size necessary to achieve signifiant results.
+  * $\Rightarrow$ sampling on the basis of geography results in a positive correlation in reponses. This saves money, but will cause higher variance.
+  
+* Stratification reduces variance, clustering increases variance. Measure the impact with the deff. (ratio of variance under the sample design to the variance of the simple random sample design of the same size)
+
+*Measurement error* Suppose survey responses of the $i$th person, $x_i$ are $x_i=x^*_i+u_i$ where $x^*_i$ is the true response. If $u_i=0 \forall i$ you have no measurement error.
+  * Can observe measurement error using validation interviews and matching with administrative data

@@ -1,0 +1,233 @@
+---
+title: "PPHA 42000: Problem Set 1"
+author: "Morgan Conklin Spangler"
+date: "1/13/2019"
+output: pdf_document
+header-includes:
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{ amssymb }
+  - \usepackage{amsmath}
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{ wasysym }
+  - \usepackage{mathtools}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##*A. Analytical Problems*
+
+  1. Prove (P1)-(P5) from the lecture notes. Establish whether each problem continues to hold if the model does not include a constant term. \newline
+           (P1): $\bar{y}=\bar{X}b$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Regression passes through the mean of the data \newline
+           Given $y=x\beta + \epsilon$, we can establish the following:
+           $E(y)=\frac{\sum y_i}{n}=\bar{y}$ \newline
+           $E(X)=\frac{\sum x_i}{n}=\bar{X}$\newline
+           $E(\epsilon)=0$ (by assumption)\newline
+           $\Rightarrow \bar{y}=E(y)=E(X\beta + \epsilon)=E(x\beta)+E(\epsilon)=bE(X)=b\bar{x}$\newline
+           $$\Rightarrow \bar{y}=\bar{X}b$$
+           We have not posed any restrictions on the values of $x_i$. Therefore, if $x_1=0$ (there is a constant term) this identity will continue to hold. \newline
+           (P2): $\sum_i y_i=\sum_i \hat{y}_i$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Sum of actual values equals sum of predicted values \newline
+           From previous, we have $\bar{y}=\bar{X}b$. With this, we can multiply through by $n$ to get, $n\bar{y}=n\bar{X}b$. Notice $\bar{X}=\frac{nx}{n} so x\cdot b\cdot n=\bar{x}\cdot b\cdot n$. \newline
+           Then we see that $\sum \hat{y_i}=n\cdot \hat{y}=xb\cdot n$. Also, since $xb=y$, it is also the case that $xb\cdot n=y\cdot n$. \newline
+           $$\Rightarrow \sum \hat{y_i}=xb\cdot n=y\cdot n=\sum y_i$$
+           $$\Rightarrow \sum \hat{y_i}=\sum y_i$$
+           We have not posed any restrictions on the values of $x_i$. Therefore, if $x_1=0$ (there is a constant term) this identity will continue to hold. \newline
+           (P3): $\sum e_i =0$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Residuals sum to zero \newline
+           $$e_i=y_i-\hat{y_i}\Rightarrow \sum_i e_i=\sum_i y_i-\sum_i \hat{y_i}$$
+           $$y_i-\hat{y_i}=0 \Rightarrow \sum_i y_i-\sum_i \hat{y_i}=0$$
+           $$\Rightarrow \sum_i e_i=0$$
+           We have not posed any restrictions on the values of $x_i$. Therefore, if $x_1=0$ (there is a constant term) this identity will continue to hold. \newline
+           (P4): $X'e=0$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Residuals are orthogonal to regressors \newline
+           First, we show that $e'y=0$
+           $$\hat{y}=Xb=x(x'x)^{-1}x'y=Py, P=x(x'x^{-1}x'$$
+           $$e=y-\hat{y}=y-Py=(I-P)y, [I-P=M, M'M=M]$$
+           $$\Rightarrow e=My$$
+           $$e'e=y'M'My=y'My=e'y=0$$
+           Then, we use this to show $e'X=0$.
+           $$y=Xb+e \Rightarrow e'y=e'Xb+e'e$$
+           $$e'y=0, e'e=0 \Rightarrow 0=e'Xb+0$$
+           $$b\neq 0 \Rightarrow e'X=0$$
+           We have not posed any restrictions on the values of $x_i$. Therefore, if $x_1=0$ (there is a constant term) this identity will continue to hold.\newline
+           (P5): $\hat{y}'e=0$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; Residuals are orthogonal to predicted values
+           $$\hat{y_i}=bx_i+e_i$$
+           $$e'X=0, e'e=0 \Rightarrow e'\hat{y_i}=e'Xb+e'e=0$$
+           $$\Rightarrow e'\hat{y_i}=0$$
+           We have not posed any restrictions on the values of $x_i$. Therefore, if $x_1=0$ (there is a constant term) this identity will continue to hold.\newline
+  2. Let the model be \newline
+  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $y_i =\beta_1 + \beta_2 x_i+\epsilon_i$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $i=1,...,n_0,n_0+1,...,n.$ 
+\newline
+  Suppose that $x_i=0$ for $i\leq n_0$ and $x_i=1$ for $i>n_0$. Show that $b_1=(n_0)^{-1}\sum_{i=1}^{n_0}y_i$ and $b_2=\bar{y}_1-\bar{y}_2$, where $\bar{y}_1=(n-n_0)^{-1}\sum_{i=n_0+1}^ny_i$. Interpret these estimates.
+  We can rephrase $b_1$ and $b_2$ to be:\newline
+      $b_1$ is the average value of $y_i$ for $i\leq n_0$, and\newline
+      $b_2=\bar{y_1}-\bar{y_2}$, where $\bar{y_1}$ is the average value of $y_i$ for $i>n_0$       and $y_2$ is the average value of $y_i$ for $i>n_0+1$. Therefore, $b_2$ is the average       value of $y_i$ for $n_0+1$.\newline
+  Now, we solve for the FOCs of $S(b)=\sum_i(y_i-b_1 - b_2 x_i)^2$.\newline
+      $\frac{\partial S(b)}{\partial b_1}: -2\sum_i[y_i-b_1-b_2x_i]=0$\newline
+      $\frac{\partial S(b)}{\partial b_2}: -2\sum_i[(y_i-b_1-b_2x_i)x_i]=0$\newline
+      $\Rightarrow \sum_i[y_i-b_1-b_2x_i]=0$\newline
+      $\Rightarrow \sum_iy_i-\sum_ib_2x_i=\sum_ib_1$\newline
+      $\sum_i y_i =\sum_i b_1 + \sum_i b_2 x_i$\newline
+      At $i\leq n_0$, $\sum_i^{i\leq n_0} y_i =\sum_i^{i\leq n_0} b_1 + \sum_i^{i\leq n_0} b_2 x_i =\sum_i^{i\leq n_0} b_1$
+      $$\Rightarrow b_1 = \frac{\sum_i^{i\leq n_0} y_i}{n_0}$$
+      Therefore, we can rewrite the constraint as, $\sum_i y_i =\frac{\sum_i^{i\leq n_0} y_i}{n_0} + \sum_i b_2 x_i$ \newline $\Rightarrow \sum_i^{i\leq n_0} y_i + \sum_i^{i> n_0} y_i = \frac{\sum_i^{i\leq n_0} y_i}{n_0} + \sum_i^{i\leq n_0} b_2 x_1 + \sum_i^{i> n_0} b_2 x_i$\newline
+      $\Rightarrow \sum_i^{i\leq n_0} y_i + \sum_i^{i> n_0} y_i = \frac{\sum_i^{i\leq n_0} y_i}{n_0} + \sum_i^{i> n_0} b_2 x_i$\newline
+      $\Rightarrow n_0\cdot\sum_i^{i\leq n_0} y_i + n_0\cdot\sum_i^{i> n_0} y_i = \sum_i^{i\leq n_0} y_i + n_0\cdot\sum_i^{i> n_0} b_2 x_i$\newline
+       $\Rightarrow \sum_i^{i\leq n_0} y_i + \sum_i^{i> n_0} y_i -\frac{\sum_i^{i\leq n_0} y_i}{n_0}= \sum_i^{i> n_0} b_2 x_i$\newline
+       $\Rightarrow \sum_i^{i\leq n_0} y_i + \sum_i^{i> n_0} y_i -\frac{\sum_i^{i\leq n_0} y_i}{n_0}= (n-n_0)b_2$ \newline
+       $$\Rightarrow \frac{1}{(n-n_0)}[\sum_i y_i -\frac{\sum_i^{i\leq n_0} y_i}{n_0}]= b_2$$
+  3. Show that the least squares residuals $e$ are heteroskedastic and correlated even if the disturbance term $\epsilon$ is homoskedastic and uncorrelated.
+  For $i\leq n_0$, $\hat{y_i}=b1+e_i$, whereas for $i>n_0$, $\hat{y_i}=b_1+b_2+e_i$. Then, we can see that the error term differentiates between $i\leq n_0$, where $e_i=\hat{y_i}-b1$ and $i>n_0$, where $e_i=\hat{y_i}-b1-b2$. So, $e_{i,i>n_0}=e_{i,n\leq 0}-b2$. Therefore, regardless of the structure of the disturbance terms of the data, the error terms in the model will be heteroskedastic and correlated as they will fluctuate clearly with $i$.\newline
+  4. Suppose the model is given by \newline (1) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $y_{it}=\mu_i+x_{it}\beta+\epsilon_{it}$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $i=1,...,N; t=1,...,T$ \newline where the data have a group structure such that there are $N$ groups with $T$ observations per group. \newline
+  The term $y_{it}$ is the scalar dependent variable for the $t$th observation of the $i$th group; $\mu_i$ is a group specific constant term, $x_{it}$ is a $1 \times k$ vector of explanatory variables that does not include a constant term, $\epsilon_{it}$ is a disturbance term, and $\beta$ is a $k\times 1$ vector of slope coefficients.
+  (a) Use the Frisch-Waugh-Lovell theorem to prove that OLS applied to (1) yields the same estimates of the slope coefficients as OLS applied to \newline (2) &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $y_{it}-\bar{y}_i=(x_{it}-\bar{x}_i)\beta+\epsilon_{it}-\bar{\epsilon}_i$ &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; $i=1,...,N;t=1,...,T$ \newline where $\bar{y}_i=T^{-1}\sum_{t=1}^Ty_{it}$ and similarly for $\bar{x}_i$ and $\bar{\epsilon}_i$.\newline
+  Given that $\bar{y}=\bar{x}b+\bar{e}$, $\bar{e}=0$, we could use Frisch-Waugh-Lovell (FWL) to run this as a regression with k=1 (the means). Then, the remaining datapoints are regressed on these means to obtain a second regression, $y_{it}-\bar{y}_i=(x_{it}-\bar{x}_i)\beta+\epsilon_{it}-\bar{\epsilon}_i$, which, according to FWL, achieve the same predicted coefficient effects as the larger model, $y_{it}=\mu_i+x_{it}\beta+\epsilon_{it}$, due to the linearity of our regression equations, regardless of the orthogonality or lack thereof between the regressors. 
+  (b) After estimating (2), how would you recover estimates of the group-specific intercepts $\mu_i$?
+  After running our FWL regressions, the constant term can be easily solved for as follows below. $$y_{it}=\mu_i+x_{it}\beta+\epsilon_{it}, y_{it}-\bar{y}_i=(x_{it}-\bar{x}_i)\beta+\epsilon_{it}-\bar{\epsilon}_i$$
+  $$\Rightarrow E(\mu_i) = E(y_{it}) - E(x_{it}\beta)+E(\epsilon_{it})= \bar{y} -b\bar{x}_i$$
+  
+##*B. Computational Problems*
+
+  1. Use the summary command to find the means of the following variables: earnings, welfare income, total income, education, age, and age squared. Comment on the sample sizes corresponding to the different variables.
+  
+```{r B1, include=TRUE}
+library(haven)
+pp420_data <- read_dta("~/Downloads/pp420_data.dta")
+  dat <- pp420_data
+  earn <- dat$earn
+  welf <- dat$adcc
+  tot <- dat$tinc
+  educ <- dat$higrade 
+  age <- dat$age
+  agesq <- dat$agesq
+  summary(earn)
+  summary(welf)
+  summary(tot)
+  summary(educ)
+  summary(age)
+  summary(agesq)
+```
+$\bar{earn}=571.5, n=11260$\newline
+$\bar{welfare}=543.5, n=11260$\newline
+$\bar{income}=1691 ,n=11260$\newline
+$\bar{education}=11.07,n=10940$\newline
+$\bar{age}=29.72,n=11260$\newline
+$\bar{age}^2=936.1,n=11260$\newline
+The sample size for all variables except education is 11,260 observations. There are 320 missing observations for education, making its sample size 10,940. Therefore, for any model run with education as a parameter, the observations with missing data will be ignored by default and the general sample size for the model will be 10,940.\newline
+  2. Now use the regress command to separately regress earnings, welfare income, and total income on a constant. Compare the regression results to the means from above. Explain their relationship.\newline
+```{r B2, include=TRUE}
+lm(earn~1)
+lm(welf~1)
+lm(tot~1)
+lm(educ~1)
+lm(age~1)
+lm(agesq~1)
+```
+ We obviously find that the effects are equivalent to the means found above. \newline
+  3. Now regress earnings on education, age, and age squared.\newline
+```{r B3}
+b3 <-glm(earn~educ+age+agesq)
+b3
+anova(b3)
+```
+  
+  (a) Explain the sample size used to estimate the regression.\newline
+```{r b3a}
+n <- nrow(b3$model)
+n
+```
+  
+  As mentioned previously, the sample size is 10,940 due to the missing data for 320 observations in education.\newline
+  (b) Interpret the education coefficient.\newline
+The education coefficient of approximately 105 should be interpreted as the mdoel found a positive effect of a marginal increase in education by one grade to see a quarterly earnings increase of approximately $105.73. This was also found to be highly statistically significant (F value of over 250), meaning there is an extremely small chance that the true effect of education is not greater than zero.\newline
+  (c) What are the TSS, RSS, and ESS?\newline
+```{r b3c}
+res <- b3$residuals
+x1 <- b3[["model"]][["educ"]]
+x2 <-b3[["model"]][["age"]]
+x3<-b3[["model"]][["agesq"]]
+y <- b3[["model"]][["earn"]]
+yhat <- b3$fitted.values
+ybar <- (sum(y))/n
+ESS <- sum(res^2)
+RSS <- sum(yhat*yhat-n*ybar*ybar)
+TSS<- RSS+ESS
+TSS
+ESS
+RSS
+```
+    
+  (d) Use them to compute the R-square and compare it to the value reported in the regression output.\newline
+```{r b3d}
+Rsq <- RSS/TSS
+Rsq
+summary(b3)
+```
+  4. Retrieve the residuals and predicted values from the above regression, and use them to verify the following properties:\newline
+  (a) the residuals sum to zero\newline
+```{r b4a}
+check1<- sum(res)
+check1
+```
+   
+  (b) the mean of the predicted values equals the mean of the dependent variable.\newline
+```{r b4b}
+check2<- mean(y)-mean(yhat)
+check2
+```
+    
+  (c) the residuals are orthogonal to the regressors and the predicted values.\newline
+```{r b4c}
+check3a <- cor(res,x1)
+check3a
+check3b<-cor(res,x2)
+check3b
+check3c<-cor(res,x3)
+check3c
+check3d<-cor(res,yhat)
+check3d
+```
+    (d) the square of the correlation coefficient between the dependent variable and the predicted values equals the R-square from the regression.\newline
+```{r b4d}
+check4 <- (cor(y,yhat)^2)-Rsq
+check4
+```
+  5. Re-estimate the regression from problem 3, this time omitting the constant term. Which of properties 4(a)-(d) still hold, if any? Explain.\newline
+```{r b5}
+b5 <- lm(earn~educ+age+agesq-1)
+anova(b5)
+res <- b5$residuals
+x1 <- b5[["model"]][["educ"]]
+x2 <-b5[["model"]][["age"]]
+x3<-b5[["model"]][["agesq"]]
+y <- b5[["model"]][["earn"]]
+yhat <- b3$fitted.values
+ybar <- (sum(y))/n
+ESS <- sum(res^2)
+RSS <- sum(yhat*yhat-n*ybar*ybar)
+TSS<- RSS+ESS
+TSS
+ESS
+RSS
+Rsq <- 1- (ESS/TSS)
+Rsq
+check1<- sum(res)
+check1
+check2<- mean(y)-mean(yhat)
+check2
+check3a <- cor(res,x1)
+check3a
+check3b<-cor(res,x2)
+check3b
+check3c<-cor(res,x3)
+check3c
+check3d<-cor(res,yhat)
+check3d
+check4 <- (cor(y,yhat)^2)-Rsq
+check4
+```
+I know I have an error in my code for $R^2$ because the 4th property in the previous model did not hold to begin with. Setting this aside, however, we see that the sum of the residuals being equal to zero no longer holds. Otherwise, all of the properties hold with the constant term omitted (orthogonality, correlations - for the most part, and the means of the actuals equating the predicted values of earnings.)

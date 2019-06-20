@@ -1,0 +1,599 @@
+---
+title: "PPHA 41400: Homework Assignment 3"
+author: "Morgan Conklin Spangler & Chengyao Sun"
+date: "Dec 3, 2018"
+output: pdf_document
+header-includes:
+    - \usepackage{setspace}\onehalfspacing
+---
+
+### Q1.  
+With our series estimator (unique optimal smoothing parameters found for treatment and nontreatment model for each dependant variable), we find the following estimated impact of treatment on the treated.  
+```{r Q1, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|                |    ATT      |
+|:--------------:|:-----------:|
+| Hours Worked   | -7.175113   |
+| Wage Income    |-7765.829709 |
+|  Earnings      |-7733.659632 |
+"
+cat(tabl)
+```
+With our series estimator (unique optimal smoothing parameters found for treatment and nontreatment model for each dependant variable), we find the following estimated impact of treatment on the treated.  
+
+### Q2.  
+
+We run seperate estimates of ATT using a K-nearest neighbors approach.  
+
+Here, we use $k=11$ to find the ATT for each dependant variable.  
+```{r Q2a, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|     k=11       |    ATT      |
+|:--------------:|:-----------:|
+| Hours Worked   | -7.620789   |
+| Wage Income    |-7855.995772 |
+|    Earnings    |-8413.054489 |
+"
+cat(tabl)
+```
+
+Here, we use cross validation to find the optimal $k$ smoothing parameter for each model individually (treated and non-treated, as well as each dependant variable).   
+
+(Optimal values of $k$ for the treated model and untreated model were the same and are reported with the results.)
+
+  
+Using these optimal $k$ values, the estimated impacts of treatment (ATT) are outlined in the table below.  
+```{r Q2b, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|     Optimal k        |    ATT      |
+|:--------------------:|:-----------:|
+|  Hours Worked (k=3)  | -7.771937   |
+|  Wage Income (k=35)  | -8301.85876 |
+|   Earnings  (k=35)   |-8786.576277 |
+"
+cat(tabl)
+```
+
+### Q3.  
+
+Now, using the inverse probability weights, we find estimated for the impact of having children on the self-reported hours spent in the labor market to be:  
+_Short regression_  
+```{r Q3, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|            |ATT - _Short Regression_|ATT - _Long Regression_|
+|:----------:|:----------------------:|:---------------------:|
+|Hours Worked|      -7.101692         |      -7.082069        |
+|Wage Income |      -7683.814         |      -7524.797        |
+|  Earnings  |      -7716.861         |      -7557.151        |
+"
+cat(tabl)
+```
+
+### Q4.  
+Comparing our three estimates of the impact of treatment on the treated (series (S), $k$ nearest neighbor (KNN), and inverse probability weighting (IPW))  
+
+```{r Q4, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|       |  Hours Worked  |  Wage Income  |   Earnings   |
+|:-----:|:--------------:|:-------------:|:------------:|
+|   S   |    -7.175113   |  -7733.659632 | -7765.829709 |
+|  KNN  |    -7.620789   |  -7855.995772 | -8413.054489 |
+|  KNN* |    -7.771937   |  -8301.858760 | -8786.576277 |
+| IPW** |    -7.101692   |   -7683.814   | -7716.861    |
+"
+cat(tabl)
+```
+*using optimal level of $k$ found  
+**using the ATT found for short regressions  
+
+
+From this, we see that there is only a slight variation in the estimated level of impact found on treated between estimation methods. KNN using the optimal level of $k$ found through CV is has the highest estimate of impact, whereas the IPW estimates the lowest. This is consistent through all three dependant variables. However, as mentioned, this is difference is only slight (less than a 10% difference).  
+
+
+### Q5.  
+
+Here, we use the IPW method of estimation to find the estimated impact of treatment on the non-treated for the three dependant variables (ATN).  
+```{r Q5a, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|            |ATN - _Short Regression_|ATN - _Long Regression_|
+|:----------:|:----------------------:|:---------------------:|
+|Hours Worked|      -7.288151         |      -7.280023        |
+|Wage Income |      -8503.041         |      -8017.092        |
+|  Earnings  |      -8752.894         |      -8222.657        |
+"
+cat(tabl)
+```
+
+Now, we use the IPW estimation method to find the impact of having children generally on each of the dependant variables (ATE).  
+```{r Q5b, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|            |ATE - _Short Regression_|ATE - _Long Regression_|
+|:----------:|:----------------------:|:---------------------:|
+|Hours Worked|      -7.21956          |      -7.196334        |
+|Wage Income |      -8205.82          |      -7816.466        |
+|  Earnings  |      -8374.793         |      -7958.223        |
+"
+cat(tabl)
+```
+
+When comparing the various methods of estimating the ATT and the ATN, we find that they are generally show the same level of impact between the treatment and control groups (depending on which estimation method one chooses for the ATT). When you look at the impact to income from wages (and overall earnings, but less so), we see a generally larger impact in the control group than the group which chooses treatment. It is possible that this could be evidence of the fact that women are less likely to experience upward mobility in the workplace when they have children. However, this difference is not drastic. 
+
+### Appendix
+```{r code, include=TRUE, message=FALSE, warning=FALSE}
+
+acs <- read.csv("acs.csv", header=TRUE, stringsAsFactors=FALSE)
+# Load data
+
+acs <- acs[(acs$RACE==1 & acs$HISPAN==0),]
+# non-hispanic white
+
+acs[,"child"] <- 0
+acs[,"child"][acs$NCHILD>0] <- 1
+#Create dependent variable (whether having kids or not)
+
+
+acs[,"edu.factor"] <- "lh"
+#less than high school as a baseline before grouping
+
+for(i in 1:nrow(acs)){
+  if(acs$EDUCD[i] %in% c(30:61)){acs$edu.factor[i] <- "hnd"}
+  #some high school, no degree
+  if(acs$EDUCD[i]==63){acs$edu.factor[i] <- "h"}
+  #high school degree
+  if(acs$EDUCD[i]==64){acs$edu.factor[i] <- "ged"}
+  #GED
+  #Note that there is a confounding group called "high school graduate or GED," coded
+  # as 62, but there is no data under that category, so we don't consider that.
+  if(acs$EDUCD[i]%in% c(65:80,90,100,110:113)){acs$edu.factor[i] <- "cnd"}
+  #college no degree
+  if(acs$EDUCD[i]==101){acs$edu.factor[i] <- "b"}
+  #bachelor's degree
+  if(acs$EDUCD[i] %in% c(81:83)){acs$edu.factor[i] <- "a"}
+  #associate degree
+  if(acs$EDUCD[i]==114){acs$edu.factor[i] <- "m"}
+  #master's degree
+  if(acs$EDUCD[i]==115){acs$edu.factor[i] <- "p"}
+  #professional degree
+  if(acs$EDUCD[i]==116){acs$edu.factor[i] <- "d"}
+  #doctoral degree
+}#Divide education values into desired groups (i.e., factorized the education varibale)
+acs$edu.factor <- as.factor(acs$edu.factor)
+
+acs[,"msa"] <- "Yes"
+acs[,"msa"][acs$MET2013!=0] <- "No"
+#Create a MSA variable (binary, factorized)
+
+acs$msa <- as.factor(acs$msa)
+
+############ Predict propensity score ############
+
+library(survey)
+
+logit.design <- svydesign(ids = ~1, weight = ~PERWT, data=acs)
+logit.propensity <- svyglm(child ~ AGE + edu.factor + msa + 
+                I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa,
+                family = binomial(link="logit"), design = logit.design)
+# Run a second order logit to predict propensity score
+
+propensity <- logit.propensity$fitted.values
+# recover predicted propensity score
+
+acs[,"p"] <- propensity
+
+########### End of propensity score ############
+
+acs.nt <- acs[acs$child==0,]
+# Untreated
+acs.t <- acs[acs$child==1,]
+# Treated
+
+
+### (1) Estimate the conterfactual of the treated for each dependant variable
+
+DV <- c("UHRSWORK", "INCEARN", "INCWAGE")
+
+set.seed(123)
+acs.nt[,"index"] <- sample(1:5,nrow(acs.nt), replace = T)
+# Randomly partition the untreated data into 5 parts for 5-fold cross validation later
+set.seed(123)
+acs.t[,"index"] <- sample(1:5,nrow(acs.t), replace = T)
+# Randomly partition the treated data into 5 parts for 5-fold cross validation later
+
+ATT <- c()
+# An empty vector to store the final results
+
+for(d in 1:3) {
+  
+  dv <- DV[d]
+  
+  data.treated <- acs.t[,c(dv, "p", "PERWT", "index")]
+  colnames(data.treated)[1] <- "dv"
+  
+  data.untreated <- acs.nt[,c(dv, "p", "PERWT", "index")]
+  colnames(data.untreated)[1] <- "dv"
+
+  cv.rmse <- data.frame(degree=1:10,rmse.nt=NA,rmse.t=NA)
+  # a empty data.frame to store cross-validation RMSE for hours worked
+
+  avg.rmse <- c() 
+  # a empty vector to store overall RMSE of each degree
+
+  for(degree in 1:10){
+  
+    rmse <- c()
+    weight <- c()
+  
+    for (i in 1:5){
+      test.set <- data.untreated[data.untreated$index==i, ] #defune testing set
+      train.set <- data.untreated[data.untreated$index!=i,] #define training set
+    
+      train.model <- lm(dv ~ poly(p, degree=degree), 
+                      data=train.set, weights=PERWT)
+  
+      predict <- predict(train.model, newdata = test.set)
+      #out-of-sample prediction
+    
+      rmse <- c(rmse, sqrt(weighted.mean((predict-test.set$dv)^2, w=test.set$PERWT)))
+      #out-of-sample rmse of each fold(vector of 5)
+    
+      weight <- c(weight, sum(test.set$PERWT))
+      # calculate the weight of each fold's out-of-sample rmse
+    
+    } #5-fold cross validation
+  
+    avg.rmse <- c(avg.rmse, weighted.mean(rmse, w=weight))
+    # Store overall cv rmse of each degree (vector of 10)
+  
+  }
+  cv.rmse$rmse.nt <- avg.rmse
+
+  SmoothPar <- cv.rmse$degree[cv.rmse$rmse.nt==min(cv.rmse$rmse.nt)]
+  # Pick the best smoothing parameter
+
+  nontreatment <- lm(dv ~ poly(p, degree=SmoothPar), data=data.untreated, weights=PERWT)
+  # Fit a nontreatment model using untreated observations
+
+  pred.cntrfact <- predict(nontreatment, newdata=data.treated)
+  # Predict the counterfactual of the treated
+
+  
+  ### Next, do the same thing to get fitted Y1
+  avg.rmse <- c() 
+  for(degree in 1:10){
+  
+    rmse <- c()
+    weight <- c()
+  
+    for (i in 1:5){
+      test.set <- data.treated[data.treated$index==i, ]
+      train.set <- data.treated[data.treated$index!=i,]
+    
+      train.model <- lm(dv ~ poly(p, degree=degree), 
+                      data=train.set, weights=PERWT)
+    
+      predict <- predict(train.model, newdata = test.set)
+      rmse <- c(rmse, sqrt(weighted.mean((predict-test.set$dv)^2, w=test.set$PERWT)))
+      weight <- c(weight, sum(test.set$PERWT))
+    }
+    avg.rmse <- c(avg.rmse, weighted.mean(rmse, w=weight))
+  }
+  cv.rmse$rmse.t <- avg.rmse
+  
+  SmoothPar <- cv.rmse$degree[cv.rmse$rmse.t==min(cv.rmse$rmse.t)]
+  treatment <- lm(dv ~ poly(p, degree=SmoothPar), data=data.treated, weights=PERWT)
+  y1.hat <- treatment$fitted.values
+
+  att <- weighted.mean((y1.hat - pred.cntrfact), w=data.treated$PERWT)
+  
+  ATT <- c(ATT, att)
+}
+
+result <- data.frame(DV=DV, ATT=ATT)
+
+result
+
+library(caret)
+
+### (1) Fix k = 11
+
+ATT.knn <- c()
+for(d in 1:3){
+  
+  dv <- DV[d]
+  
+  model0 <- knnreg(as.data.frame(acs.nt[,"p"]), acs.nt[,dv], k=11) 
+  kn.y0 <- predict(model0, acs.t[,"p"])
+  # predict the counterfactual Y0 with k nearest neighborhoods (k=11) 
+  
+  model1 <- knnreg(as.data.frame(acs.t[,"p"]), acs.t[,dv], k=11)
+  kn.y1 <- predict(model1, acs.t[,"p"])
+  # estimate Y1 with k nearest (k=11)
+  
+  att <- weighted.mean((kn.y1 - kn.y0), w=data.treated$PERWT)
+  
+  ATT.knn <- c(ATT.knn, att)
+    
+}
+
+### (2) Extra credit: cross validation
+
+#(2.1) Cross validation for untreated model
+
+knn_fn <- function(k, train.set, test.set, dept){
+  x <- as.data.frame(train.set$p); y <- train.set[,dept]
+  model <- knnreg(x, y, k)
+  return(predict(model, test.set$p))
+}# define a function to return knn prediction results
+
+rmse.nt.knn <- data.frame(UHRSWORK=NA, INCEARN=NA, INCWAGE=NA)
+for (k in 1:40){
+  rmse <- data.frame(UHRSWORK=NA, INCEARN=NA, INCWAGE=NA)
+  for (fold in 1:5){
+    train.set <- acs.nt[acs.nt$index!=fold,]
+    test.set <- acs.nt[acs.nt$index==fold,]
+    rmse[fold,1] <- weighted.mean((knn_fn(k, train.set, test.set, 'UHRSWORK')- 
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+    rmse[fold,2] <- weighted.mean((knn_fn(k, train.set, test.set, 'INCEARN')-
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+    rmse[fold,3] <- weighted.mean((knn_fn(k, train.set, test.set, 'INCWAGE')-
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+  }
+  rmse.nt.knn[k,] <- sqrt(apply(rmse, 2, mean))
+}
+
+best.k.nt <- data.frame(DV=DV,
+                        best.k=c(match(min(rmse.nt.knn[,1]), rmse.nt.knn[,1]),
+                                 match(min(rmse.nt.knn[,2]), rmse.nt.knn[,2]),
+                                 match(min(rmse.nt.knn[,3]), rmse.nt.knn[,3])
+                                 )
+                        )
+best.k.nt
+
+
+#(2.2) Cross validation for treated model
+
+rmse.t.knn <- data.frame(UHRSWORK=NA, INCEARN=NA, INCWAGE=NA)
+for (k in 1:40){
+  rmse <- data.frame(UHRSWORK=NA, INCEARN=NA, INCWAGE=NA)
+  for (fold in 1:5){
+    train.set <- acs.t[acs.t$index!=fold,]
+    test.set <- acs.t[acs.t$index==fold,]
+    rmse[fold,1] <- weighted.mean((knn_fn(k, train.set, test.set, 'UHRSWORK')- 
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+    rmse[fold,2] <- weighted.mean((knn_fn(k, train.set, test.set, 'INCEARN')-
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+    rmse[fold,3] <- weighted.mean((knn_fn(k, train.set, test.set, 'INCWAGE')-
+                                     test.set$UHRSWORK)^2, test.set$PERWT)
+  }
+  rmse.t.knn[k,] <- sqrt(apply(rmse, 2, mean))
+}
+
+best.k.t <- data.frame(DV=DV,
+                        best.k=c(match(min(rmse.nt.knn[,1]), rmse.nt.knn[,1]),
+                                 match(min(rmse.nt.knn[,2]), rmse.nt.knn[,2]),
+                                 match(min(rmse.nt.knn[,3]), rmse.nt.knn[,3])
+                                 )
+                        )
+best.k.t
+
+ATT.knn.cv <- c(
+              mean(knn_fn(best.k.nt[1,2], acs.nt, acs.t, 'UHRSWORK') -
+              knn_fn(best.k.t[1,2], acs.t, acs.t, 'UHRSWORK')),
+              mean(knn_fn(best.k.nt[2,2], acs.nt, acs.t, 'INCEARN') -
+              knn_fn(best.k.t[2,2], acs.t, acs.t, 'INCEARN')),
+              mean(knn_fn(best.k.nt[3,2], acs.nt, acs.t, 'INCWAGE') -
+              knn_fn(best.k.t[3,2], acs.t, acs.t, 'INCWAGE'))
+              )
+
+best.k.nt
+# knn-estimated ATT with cv-selected k
+
+data.frame(DV=DV, ATT.knn.cv=ATT.knn.cv)
+# knn-estimated ATT with cv-selected k
+
+
+IPW <- c()
+ipw <- 0
+for(i in 1:nrow(acs)){
+  
+  w <- acs$PERWT[i]
+  p <- propensity[[i]]
+  
+  if(acs$child[i]==1){
+    ipw <- w
+  }
+  
+  if(acs$child[i]==0){
+    ipw <- (w)*(p/(1-p))
+  }
+  
+  IPW <- c(IPW, ipw)
+}# Calculate IPW
+acs[,"IPW"] <- IPW
+
+att.ipw.hrsw <- lm(UHRSWORK ~ child, weights=IPW, data=acs)
+# OLS with IPW for hours worked (short version)
+
+att.ipw.hrsw$coefficients[2]
+# Predicted ATT for hours worked
+
+att.ipw.hrsw.long <- lm(UHRSWORK ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                        weights=IPW, data=acs)
+# long regression
+
+att.ipw.hrsw.long$coefficients[2]
+# Long-reg predicted ATT for hours worked
+
+att.ipw.wage <- lm(INCWAGE ~ child, weights=IPW, data=acs)
+# OLS with IPW for wage earnings (short version)
+
+att.ipw.wage$coefficients[2]
+# Predicted ATT for wage earnings
+
+att.ipw.wage.long <- lm(INCWAGE ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                        weights=IPW, data=acs)
+# long regression
+
+att.ipw.wage.long$coefficients[2]
+# Long-reg predicted ATT for earnings
+
+att.ipw.earn <- lm(INCEARN ~ child, weights=IPW, data=acs)
+# OLS with IPW for earnings (short version)
+
+att.ipw.earn$coefficients[2]
+# Predicted ATT for earnings
+
+att.ipw.earn.long <- lm(INCEARN ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                        weights=IPW, data=acs)
+# long regression
+
+att.ipw.earn.long$coefficients[2]
+# Long-reg predicted ATT for hours worked
+
+############# Estimate ATN #################
+
+IPW2 <- c()
+ipw2 <- 0
+for(i in 1:nrow(acs)){
+  
+  w <- acs$PERWT[i]
+  p <- propensity[[i]]
+  
+  if(acs$child[i]==1){
+    ipw2 <- w*(1-p)/p
+  }
+  
+  if(acs$child[i]==0){
+    ipw2 <- w
+  }
+  
+  IPW2 <- c(IPW2, ipw2)
+}# Calculate IPW
+acs[,"IPW2"] <- IPW2
+
+atn.ipw.hrsw <- lm(UHRSWORK ~ child, weights=IPW2, data=acs)
+# OLS with IPW for hours worked (short version)
+
+atn.ipw.hrsw$coefficients[2]
+# Predicted ATN for hours worked
+
+atn.ipw.hrsw.long <- lm(UHRSWORK ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW2, data=acs)
+# OLS with IPW for hours worked (long version)
+
+atn.ipw.hrsw.long$coefficients[2]
+# Predicted ATN for hours worked
+
+atn.ipw.wage <- lm(INCWAGE ~ child, weights=IPW2, data=acs)
+# OLS with IPW for wage earnings (short version)
+
+atn.ipw.wage$coefficients[2]
+# Predicted ATN for wage earnings
+
+atn.ipw.wage.long <- lm(INCWAGE ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW2, data=acs)
+# OLS with IPW for wage (long version)
+
+atn.ipw.wage.long$coefficients[2]
+# Predicted ATN for wage
+
+atn.ipw.earn <- lm(INCEARN ~ child, weights=IPW2, data=acs)
+# OLS with IPW for earnings (short version)
+
+atn.ipw.earn$coefficients[2]
+# Predicted ATN for earnings
+
+atn.ipw.earn.long <- lm(INCEARN ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW2, data=acs)
+# OLS with IPW for earnings (long version)
+
+atn.ipw.earn.long$coefficients[2]
+# Predicted ATN for earnings
+
+############# End of ATN #################
+
+############# Estimate ATE #################
+IPW3 <- c()
+ipw3 <- 0
+for(i in 1:nrow(acs)){
+  
+  w <- acs$PERWT[i]
+  p <- propensity[[i]]
+  
+  if(acs$child[i]==1){
+    ipw3 <- w/p
+  }
+  
+  if(acs$child[i]==0){
+    ipw3 <- w/(1-p)
+  }
+  
+  IPW3 <- c(IPW3, ipw3)
+}# Calculate IPW
+acs[,"IPW3"] <- IPW3
+
+ate.ipw.hrsw <- lm(UHRSWORK ~ child, weights=IPW3, data=acs)
+# OLS with IPW for hours worked (short version)
+
+ate.ipw.hrsw$coefficients[2]
+# Predicted ATE for hours worked
+
+ate.ipw.hrsw.long <- lm(UHRSWORK ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW3, data=acs)
+# OLS with IPW for hours worked (long version)
+
+ate.ipw.hrsw.long$coefficients[2]
+# Predicted ATE for hours worked
+
+ate.ipw.wage <- lm(INCWAGE ~ child, weights=IPW3, data=acs)
+# OLS with IPW for wage earnings (short version)
+
+ate.ipw.wage$coefficients[2]
+# Predicted ATE for wage earnings
+
+ate.ipw.wage.long <- lm(INCWAGE ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW3, data=acs)
+# OLS with IPW for wage (long version)
+
+ate.ipw.wage.long$coefficients[2]
+# Predicted ATE for wage
+
+ate.ipw.earn <- lm(INCEARN ~ child, weights=IPW3, data=acs)
+# OLS with IPW for earnings (short version)
+
+ate.ipw.earn$coefficients[2]
+# Predicted ATE for earnings
+
+ate.ipw.earn.long <- lm(INCEARN ~ child + AGE + edu.factor + msa + 
+                          I(AGE^2) + AGE:edu.factor + AGE:msa + edu.factor:msa, 
+                   weights=IPW3, data=acs)
+# OLS with IPW for earnings (long version)
+
+ate.ipw.earn.long$coefficients[2]
+# Predicted ATE for earnings
+
+############# End of ATE #################
+
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+

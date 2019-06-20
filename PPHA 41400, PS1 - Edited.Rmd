@@ -1,0 +1,307 @@
+---
+title: "PPHA 41400, Problem Set 1"
+author: "Morgan Spangler and Lindsay Liebert"
+date: "10/18/2018"
+output:
+  pdf_document: default
+  html_document:
+    df_print: paged
+---
+```{r, echo=FALSE}
+knitr::opts_chunk$set(error = TRUE)
+```
+
+## Problem 1  
+```{r, echo=FALSE, message = FALSE, warning = FALSE}
+library(psych)
+library(knitr)
+library(cobalt)
+library(dplyr)
+df_all <- read.csv('~/Desktop/JTPA.csv', header=TRUE, sep=',')
+library(MatchIt); data("df_all", package = "cobalt")
+treated = df_all[ ,c('treated', 'expstat')] # create subset of two variables of interest
+agg_tr = aggregate(treated, by=list(treated$expstat), function(x) mean(x, na.rm=TRUE))
+agg_tr[ , c('treated', 'expstat')]
+
+
+```
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+library(psych)
+library(knitr)
+library(cobalt)
+library(dplyr)
+df_all <- read.csv('~/Desktop/JTPA.csv', header=TRUE, sep=',')
+library(MatchIt); data("df_all", package = "cobalt")
+
+df_all_drop <-df_all %>%
+na.omit()		
+dim(df_all_drop)
+adj_df_all <- na.omit(df_all)
+treat_df_all <- subset(df_all, expstat ==1, select=c(afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, agesq, pre12ern, pre12wrk, bifid, age, caltime, site))
+
+ctrl_adj_df_all <- subset(adj_df_all, expstat ==0, select=c(afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, agesq, pre12ern, pre12wrk, bifid, age, caltime, site))
+
+treatexp <- matchit(expstat ~ afdc_ra + badenglh + fdst_ra + ged + kids + kidsud4 + longafdc + married + minor02 + minor03 + minor04 + neveradc + neverful + neverwrk + nodegree + single + numinhh + schlhgst + agesq + pre12ern + pre12wrk + bifid + age + caltime + site, data = adj_df_all)
+
+densityBy(df_all, var="expstat", grp="treated", freq=TRUE, main="Crossover of treatment group and those who received treatment")
+```
+  
+1. From the graphics above we can see that for those in the treatment group, roughly 64.9% were actually treated. Whereas, in the control group, 34.4% ended up also receiving treatment. This shows substantial crossover between groups. A significant proportion of people assigned the control group ended up receiving classroom training, and a significant portion of those assigned to receive training did not.
+
+We run individual t-tests^[found in the appendix with balance plots] on each variable from the regression of $x$ ~ $expstat$ in order to verify balance of covariates between the treatment and control groups. Alternatively, we could have chosen to run a regression of treatment on the other observable variables and obtain the F-test stat. If we fail to reject the null (i.e F is small) this would indicate that we have balance between the control group and the treatment group. 
+  
+    
+2. The intent to treat (ITT), is found by regressing the outcome variable $(emp)$ on the random assignment variable $(expstatus)$. 
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+trtgrp <- subset(df_all, expstat == 1, select=c(emp))
+
+ctrlgrp <- subset (df_all, expstat == 0, select=c(emp))
+
+itt = lm(formula = emp ~ expstat, data=df_all)
+summary(itt)
+```  
+The ITT parameter is 0.04140, implying that the effect of assignment to the treatment group increases probability of being employed in 18 months by 4.14%. The coefficient is significant at the 0.05 level. Clearly, this is not a very significant movement in employability by a job training program, which indiciates that (without any other covariates in consideration in our model) the proportion of the targeted population able to find work after being offered the job training program is not that large and, so, the job training program may not be an effective treatment. However, this doesn't give us any indication if the low rate of effectiveness is due to the fact that the treatment was lacking, or if the compliance rate (the proportion of those assigned to treatment who actually took it) was just low, therefore bringing down the effect.
+
+  
+3. The effect of the treatment on the compliers (the Bloom estimand) is found below.
+
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+stage1 = lm(formula = treated ~ expstat, data = df_all)
+bloom2 = lm(formula = emp ~ predict(stage1), data = df_all)
+summary(bloom2)
+```  
+The Bloom estimator is 0.135 for the treated. This implies that amongst compliers, treatment increases probability of employment in 18 months by 13.5%. The coefficient is significant at the 0.05 level. This indicates that, without any other covariates in consideration in our model, the job training program is notably more effective on the group that actually received treatment, although possibly not as effective of a treatment as hoped for.
+
+4. These two estimators re-estimated with all other covariates included in our dataset are,  
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+trtgrp_all <- subset(df_all, expstat == 1, select=c(emp, treated, afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, pre12ern, pre12wrk, age))
+trtgrpall_mean <- mean(trtgrp_all$emp)
+
+ctrlgrp_all <- subset (df_all, expstat == 0, select=c(emp, treated, afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, pre12ern, pre12wrk, age))
+ctrlgrpall_mean <- mean(ctrlgrp_all$emp)
+
+itt2 = lm(formula = emp ~ expstat + afdc_ra + badenglh + fdst_ra + ged + kids + kidsud4 + longafdc + married + minor02 + minor03 + minor04 + neveradc + neverful + neverwrk + nodegree + single + numinhh + schlhgst + pre12ern + pre12wrk + age, data=df_all)
+summary(itt2)
+
+bloom_cv = lm(formula = treated ~ expstat + afdc_ra + badenglh + fdst_ra + ged + kids + kidsud4 + longafdc + married + minor02 + minor03 + minor04 + neveradc + neverful + neverwrk + nodegree + single + numinhh + schlhgst + pre12ern + pre12wrk + age, data=adj_df_all)
+
+bloom_cv2 = lm(formula = emp ~ predict(bloom_cv) + afdc_ra + badenglh + fdst_ra + ged + kids + kidsud4 + longafdc + married + minor02 + minor03 + minor04 + neveradc + neverful + neverwrk + nodegree + single + numinhh + schlhgst + pre12ern + pre12wrk + age, data=adj_df_all)
+summary(bloom_cv2)
+```  
+For ITT, adding in the covariates decreased the estimator slightly (from 4.14% to 4.098%) and increased the standard errors (from .02034 to 0.01222)
+
+For Bloom, adding in the covariates decreased the estimator from 13.585% to 12.22% and increased the standard errors (from 0.06673 to 0.08679, respectively).
+
+5. 
+While adding the covariates did not increase the expected effect of our treatment in this case, it is clear that they can substantially impact the model implications. Statisticians can abuse this by adding in unnecessary covariates that absorb certain effects of our dependant variable. Meaning, if a covariate that shouldn't directly affect the dependant variable in question is known to be correlated with it, whether positively or negatively, that would, respectively, decrease or increase the apparent effect of the treatment. Then, this apparent effect may be significantly different from the true effect. Also, it should be noted that adding in our covariates increased our standard errors. This is telling of the balance that statisticians between accuracy and precision. While adding in more covariates may lead to more accurate estimates, the cost in terms of increases in standard errors may outweigh the benefits of that increased accuracy. Finding the line of when a covariate is necessarily or unneccessarily included in a regression model is informed by both the statistics (in terms of significance, variance, etc.), as well as the theoretical literature.  
+
+##Problem 2 
+1.Using the bivariate normal distribution we can generate $Y_1$ and $Y_0$ for each $i$ as well as a dummy variable,  $D$, to indicate 1 if goes to college, 0 otherwise. We find that 64.9% of individuals in our generated data decide to attend college. 
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+set.seed(0)
+library(MASS)
+n <- 1000
+mu0 <- 40000
+mu1 <- 50000
+s0 <- 10000
+s1 <- 20000
+rho <- 0
+mu <- c(mu0,mu1)
+bvn4 <- data.frame(mvrnorm(n, mu, matrix(c(s0^2, 0, 0, s1^2), 2)))
+bvn4$d <- ifelse(bvn4[,2]>bvn4[,1], 1, 0)
+pctcollege <- mean(bvn4[,3])
+pctcollege
+```
+   
+2.  
+Using the equation in question 2 we can generate the variable Yi as follows:
+$Y_i = Y_{0i}(1-D_i)+Y_{1i}D_i$  
+  
+The naive estimator in this case is the mean of observed $Y$ for people that attended college minus the mean of observed $Y$ for people that did not attend college. 
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+bvn4$y <- bvn4[,1]*(1-bvn4[,3]) + bvn4[,2]*bvn4[,3]
+A <- aggregate(bvn4, by=list(bvn4[,3]), function(x) mean(x))
+naive_est <- A[2,3]-A[1,2]
+naive_est
+```
+We find that our naive estimator is ${\Delta}^N=\$ 14,839.15$. This can be misinterpreted as the effect of going to college on earnings. Meaning, a naive person would see going to college as a treatment which increases earnings by about $\$14,840$.
+  
+3.  
+We can estimate ATE by taking the mean of all $Y_1$ minus the mean of all $Y_0$. 
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+expy0 <- mean(bvn4[,1])
+expy1 <- mean(bvn4[,2])
+ate <- expy1 - expy0
+ate
+```
+${\Delta}^{ATE} = \$9,435.54$
+We find that the ATE is lower than the naive estimator. The naive estimator assumes that the means of the observed outcome in the sample are good approximations for what the effect on the general population would be. However, this is not the case. By design there is selection into each group (college or no college) and the ATE takes this into account. 
+  
+4.
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+college <- subset(bvn4, bvn4[,3]==1)
+nocollege <- subset(bvn4, bvn4[,3]==0)
+college_y1 <- mean(college[,2])
+college_y0 <- mean(college[,1])
+att <- college_y1 - college_y0
+nocollege_y1 <- mean(nocollege[,2])
+nocollege_yo <- mean(nocollege[,1])
+atn <- nocollege_y1 - nocollege_yo
+att
+atn
+```
+ATT is calculating the effect of treatment on the treated:
+${\Delta}^{ATT} = \$22,181.97$
+ATN is calculating the effect of treatment on the nontreated:
+${\Delta}^{ATN} = -\$14,132.63$
+If there were a policy implemented that forced everyone to go to college, people who would have otherwise selected into college would be just as well off as before the policy, as their choice to attend would not change, but people that would have otherwise selected to not go to college would be worse off. As seen by the ATN estimand, the average effect would be a reduction in earnings by just over $\$14,000$.
+  
+5.
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+set.seed(0)
+n <- 1000
+mu0 <- 40000
+mu1 <- 50000
+s0 <- 10000
+s1 <- 20000
+rho <- 0.6
+mu <- c(mu0,mu1)
+sigma <- matrix(c(s0^2, s0*s1*rho, s0*s1*rho, s1^2),2)
+library(MASS)
+bvn4 <- data.frame(mvrnorm(n, mu, sigma))
+bvn4$d <- ifelse(bvn4[,2]>bvn4[,1], 1, 0)
+pctcollege <- mean(bvn4[,3])
+pctcollege
+bvn4$y <- bvn4[,1]*(1-bvn4[,3]) + bvn4[,2]*bvn4[,3]
+A <- aggregate(bvn4, by=list(bvn4[,3]), function(x) mean(x))
+naive_est <- A[2,3]-A[1,2]
+naive_est
+expy0 <- mean(bvn4[,1])
+expy1 <- mean(bvn4[,2])
+ate <- expy1 - expy0
+ate
+```
+When we assume that the error terms are positively correlated, we find that the percentage of those who choose to attend college increase. 71.3% of the sample are electing to attend college, when before we had 64.9%.
+  
+We calculate the naive estimator as:
+${\Delta}^N= \$19,093.55$  
+  
+Similarly, we calculate the ATE as:
+${\Delta}^{ATE} = \$9,555.68$
+  
+  When positive correlation is introduced, both the naive estimator and ATE estimator increase. Though the naive estimator increases by a more substantial amount. In this scenario, those who went to college have higher outcomes in $Y0$ and $Y1$ situation. So, using the mean of the untreated group is not a good proxy for the effect of treatment. This is similar to the Roy model example we saw in class. 
+    
+6. 
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+library(MASS)
+set.seed(0)
+n <- 1000
+mu0 <- 40000
+mu1 <- 50000
+s0 <- 10000
+s1 <- 20000
+rho <- -.5
+mu <- c(mu0,mu1)
+sigma <- matrix(c(s0^2, s0*s1*rho, s0*s1*rho, s1^2),2)
+bvn4 <- data.frame(mvrnorm(n, mu, sigma))
+bvn4$d <- ifelse(bvn4[,2]>bvn4[,1], 1, 0)
+pctcollege <- mean(bvn4[,3])
+bvn4$y <- bvn4[,1]*(1-bvn4[,3]) + bvn4[,2]*bvn4[,3]
+A <- aggregate(bvn4, by=list(bvn4$d), function(x) mean(x))
+naive_est <- A[2,3]-A[1,2]
+naive_est
+expy0 <- mean(bvn4[,1])
+expy1 <- mean(bvn4[,2])
+ate <- expy1 - expy0
+ate
+```
+In the case of negatively correlated covariance terms, the naive estimator is equal to: 
+${\Delta}^N= \$12,587.53$
+and the ATE is found to be:
+${\Delta}^{ATE}=\$9,452.47$
+
+Obviously, our naive and ATE estimators are highest when the covariance terms are positively correlated. We also find that the naive estimator has a signficantly greater variance with our varying levels of correlation. This is intuitive, as the naive estimator is unable to tease out the self-selection into our two groups (college and no college), which makes it the inferior estimator. Our superior estimator of the treatment effect, the ATE in this case, shows slight differences with varying correlations, but not to nearly the same proportion as the naive estimator.
+
+##Appendix
+Balance plots of treatment and control groups with corresponding t-tests on each covariate.
+```{r , echo=FALSE, message = FALSE, warning = FALSE}
+library(psych)
+library(knitr)
+library(cobalt)
+library(dplyr)
+df_all <- read.csv('~/Desktop/JTPA.csv', header=TRUE, sep=',')
+library(MatchIt); data("df_all", package = "cobalt")
+
+df_all_drop <-df_all %>%
+na.omit()		
+dim(df_all_drop)
+adj_df_all <- na.omit(df_all)
+treat_df_all <- subset(df_all, expstat ==1, select=c(afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, agesq, pre12ern, pre12wrk, bifid, age, caltime, site))
+treat_adj_df_all <- subset(adj_df_all, expstat ==1, select=c(afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, agesq, pre12ern, pre12wrk, bifid, age, caltime, site))
+ctrl_adj_df_all <- subset(adj_df_all, expstat ==0, select=c(afdc_ra, badenglh, fdst_ra, ged, kids, kidsud4, longafdc, married, minor02, minor03, minor04, neveradc, neverful, neverwrk, nodegree, single, numinhh, schlhgst, agesq, pre12ern, pre12wrk, bifid, age, caltime, site))
+
+treatexp <- matchit(expstat ~ afdc_ra + badenglh + fdst_ra + ged + kids + kidsud4 + longafdc + married + minor02 + minor03 + minor04 + neveradc + neverful + neverwrk + nodegree + single + numinhh + schlhgst + agesq + pre12ern + pre12wrk + bifid + age + caltime + site, data = adj_df_all)
+
+bal.plot(treatexp, "afdc_ra", which = "unadjusted", main="Covariate: Receiving AFDC (Welfare) at Application")
+t.test(treat_adj_df_all[,1],ctrl_adj_df_all[,1])
+
+bal.plot(treatexp, "badenglh", which = "unadjusted", main="Covariate: Bad English Speaker")
+t.test(treat_adj_df_all[,2],ctrl_adj_df_all[,2])
+
+bal.plot(treatexp, "fdst_ra", which = "unadjusted", main="Covariate: Receiving Food Stamps at Application")
+t.test(treat_adj_df_all[,3],ctrl_adj_df_all[,3])
+
+bal.plot(treatexp, "ged", which = "unadjusted", main="Covariate: GED Certification")
+t.test(treat_adj_df_all[,4],ctrl_adj_df_all[,4])
+
+bal.plot(treatexp, "kids", which = "unadjusted", main="Covariate: Children Living in Household")
+t.test(treat_adj_df_all[,5],ctrl_adj_df_all[,5])
+
+bal.plot(treatexp, "kidsud4", which = "unadjusted", main="Covariate: Kids Under 4 Years Old Living in Household")
+t.test(treat_adj_df_all[,6],ctrl_adj_df_all[,6])
+
+bal.plot(treatexp, "longafdc", which = "unadjusted", main:"Covariate: Received AFDC (Welfare) for 2+ Years")
+t.test(treat_adj_df_all[,7],ctrl_adj_df_all[,7])
+
+bal.plot(treatexp, "married", which = "unadjusted", main="Married, Living with Spouse")
+t.test(treat_adj_df_all[,8],ctrl_adj_df_all[,8])
+
+bal.plot(treatexp, "minor02", which = "unadjusted", main="Covariate: Non-Hispanic Black")
+t.test(treat_adj_df_all[,9],ctrl_adj_df_all[,9])
+
+bal.plot(treatexp, "minor03", which = "unadjusted", main="Covariate: Hispanic")
+t.test(treat_adj_df_all[,10],ctrl_adj_df_all[,10])
+
+bal.plot(treatexp, "minor04", which = "unadjusted", main="Covariate: Other Ethnicities")
+t.test(treat_adj_df_all[,11],ctrl_adj_df_all[,11])
+
+bal.plot(treatexp, "neveradc", which = "unadjusted", main="Covariate: Never Received ADC (Welfare) Payments")
+t.test(treat_adj_df_all[,12],ctrl_adj_df_all[,12])
+
+bal.plot(treatexp, "neverful", which = "unadjusted", main="Covariate: Never Worked Full Time Job")
+t.test(treat_adj_df_all[,13],ctrl_adj_df_all[,13])
+
+bal.plot(treatexp, "neverwrk", which = "unadjusted", main="Covariate: Never Worked for Pay")
+t.test(treat_adj_df_all[,14],ctrl_adj_df_all[,14])
+
+bal.plot(treatexp, "nodegree", which = "unadjusted", main="Covariate: High School Dropout")
+t.test(treat_adj_df_all[,15],ctrl_adj_df_all[,15])
+
+bal.plot(treatexp, "single", which = "unadjusted", main="Covariate: Never Married")
+t.test(treat_adj_df_all[,16],ctrl_adj_df_all[,16])
+
+bal.plot(treatexp, "numinhh", which = "unadjusted", main="Covariate: Number of Persons in Household")
+t.test(treat_adj_df_all[,17],ctrl_adj_df_all[,17])
+
+bal.plot(treatexp, "schlhgst", which = "unadjusted", main="Covariate: Highest Grade Completed")
+t.test(treat_adj_df_all[,18],ctrl_adj_df_all[,18])
+
+bal.plot(treatexp, "pre12ern", which = "unadjusted", main:"Covariate: Gross Earnings in Prior 12 Months")
+t.test(treat_adj_df_all[,20],ctrl_adj_df_all[,20])
+
+bal.plot(treatexp, "pre12wrk", which = "unadjusted", main="Covariate: Fraction of Weeks Working in Prior 12 Months")
+t.test(treat_adj_df_all[,21],ctrl_adj_df_all[,21])
+
+bal.plot(treatexp, "age", which = "unadjusted", main="Covariate: Age")
+t.test(treat_adj_df_all[,23],ctrl_adj_df_all[,23])
+```

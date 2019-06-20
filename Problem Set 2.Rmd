@@ -1,0 +1,232 @@
+---
+title: "Problem Set 2"
+author: "Morgan Conklin Spangler"
+date: "1/23/2019"
+output: pdf_document
+header-includes:
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{ amssymb }
+  - \usepackage{amsmath}
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{ wasysym }
+  - \usepackage{mathtools}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+##*A. Analytical Problems*
+  1. Consider the model:\newline $y_i=\beta_1 x_{i1} + \beta_2 x_{i2} +\beta_3 x_{i3} + \beta_4 x_{i4} +\epsilon_i$.\newline For the hypothesis $H_0: \beta_2=1, \beta_3=\beta_4$
+      (a) Propose a test statistic (with specific, rather than general, notation.)\newline
+      $J=2$, $R=\begin{pmatrix}
+0 & 1 & 0 & 0\\
+0 & 0 & 1 & -1
+\end{pmatrix},
+q=\begin{pmatrix}
+1\\ 
+0
+\end{pmatrix}$
+$$R\beta=q$$
+If $\sigma^2$ were known, a test could be based on the Wald criterion alone, $W=\frac{(Rb-q)'[R(X'X)^{-1}R'](Rb-q)}{\sigma^2}$, $W\sim \chi^2_J$. However, as $\sigma^2$ is not known, we need a $\chi^2_{(n-K)}$ random variable which is independent of $W$ and eliminates $\sigma^2$. $$(n-K)\frac{s^2}{\sigma^2}=\frac{e'e}{\sigma^2}\sim \chi^2_{n-K}$$
+$W$ and $(n-K)\frac{s^2}{\sigma^2}$ are quadratic in $b$ and $\epsilon$, respectively, and that $b$ and $s^2$ are independent (assumed through GM assumptions), $Rb-q$ and $s^2$ are also independent. Therefore, we can also say that $W$ and $(n-K)\frac{s^2}{\sigma^2}$ are independent by the Independence Theorem. So, we use these facts to solve for an $F$ statistic.$$F=\frac{\frac{(Rb-q)'[\sigma^2 R(X'X)]^{-1}(Rb-q)}{J}}{\frac{\frac{s^2}{\sigma^2}(n-K)}{(n-K)}}$$
+$$F=\frac{\frac{(Rb-q)'[\sigma^2 R(X'X)]^{-1}(Rb-q)}{J}}{\frac{s^2}{\sigma^2}}$$
+$$F=\frac{\frac{(Rb-q)'[R(X'X)]^{-1}(Rb-q)}{J}}{s^2}$$ $$\Rightarrow F=\frac{\frac{(Rb-q)'[R(X'X)]^{-1}(Rb-q)}{J}}{\frac{e'e}{n-K}}$$
+      (b) Derive its distribution under the null.\newline
+      $$F=\frac{\frac{(Rb-q)'[R(X'X)]^{-1}(Rb-q)}{J}}{\frac{e'e}{n-K}} \sim F_{J,n-K}$$ with $J=2$, $R=\begin{pmatrix}
+0 & 1 & 0 & 0\\
+0 & 0 & 1 & -1
+\end{pmatrix},
+q=\begin{pmatrix}
+1\\ 
+0
+\end{pmatrix}$,
+$R\beta=q$
+      (c) Explain the conditions under which you would reject $H_0$.\newline
+      Since $F\sim F_{J,n-K}$, we would reject the null hypothesis if $|F| > F_{\alpha /2}$, where $F_{\alpha /2}$ is the $100(1-{\frac{\alpha}{2}})$ percentile of the $F$ distribution with \{J, n-K\} degrees of freedom. In other words, we would reject the null if $F$ were "large" and fail to reject if $F$ were not "large", where the concept of "large" is dependant on the sampling distribution and the level of confidence we were comfortable with (i.e. $\alpha=10\%$ v. $\alpha = 1\%$).
+      (d) Show how your test statistic can be computed from two regressions.\newline
+      $F=\frac{\frac{(Rb-q)'[R(X'X)]^{-1}(Rb-q)}{J}}{\frac{e'e}{n-K}}=\frac{\frac{e_*'e_*-e'e}{J}}{\frac{e'e}{n-K}}=\frac{\frac{ESS_c-ESS_u}{J}}{\frac{ESS_u}{n-K}}$\newline
+  The test statistic is found by finding the sum of squared residuals for the constraint and unconstrained regressions seperately, $ESS_c$ and $ESS_u$, respectively. Then, dividing these by the degrees of freedom, $J$ and $n-K$, we can calculate the numerator and denominator for the F statistic and solve accordingly.
+  2. Let the model be \newline $y=X\beta +\epsilon$
+  &nbsp;$=X_1\beta_1+X_2\beta_2 +\epsilon$\newline
+  where $X_1$ is $n\times k_1$, $X_2$ is $n\times k_2$, and $k_1+k_2=K$. The estimator $b_R$ estimates $\beta$ subject to the constraint $R\beta-q=0$. It can be written as \newline
+  $b_R=b-(X'X)^{-1}R'[R(X'X)^{-1}R']^{-1}(Rb-q)$
+      (a) Evaluate the expectation of $b_R$. Provide a condition (in addition to A1-A5) under which it is (conditionally) unbiased.\newline
+      $Z\sim N(\mu,\Sigma), q=a+Bz \Rightarrow q\sim N(a+B\mu,B\Sigma B')$ \newline Given that $b=\beta+(X'X)^{-1}X'\epsilon$, $E[b]=E[\beta]+E[(X'X)^{-1}X'\epsilon]$. So, if we assume that $\epsilon \sim N(0,\sigma^2I_n)$, we have that $b\sim N(\beta,\sigma^2(X'X)^{-1})$. Then, when estimating the expectation of the restricted model's estimates, $b_R$, this assumption would be sufficient to ensure unbiasedness, conditional on $X$. $$E[b_R]=E[b-(X'X)^{-1}R'[R(X'X)^{-1}R']^{-1}(Rb-q)]$$ $$E[b_R]=E[b]-E[(X'X)^{-1}R'[R(X'X)^{-1}R']^{-1}(Rb-q)]$$ $$E[b_R]=E[b]-E[(X'X)^{-1}R'[R(X'X)^{-1}R']^{-1}Rb]+E[(X'X)^{-1}R'[R(X'X)^{-1}R']^{-1}q]$$
+      (b) Show that $V(b_R | X) \leq V(b_1 | X)$, where $b_1$ is the vector of coefficients on $X_1$ from the regression of $y$ on $X_1$ and $X_2$.\newline
+      Given that $b_R$ is an estimator from a constrained regression model, and we know that placing a constraint on the number of regressors cannot decrease the sum of squared residuals, it cannot be the case that $V(b_R | X) \leq V(b_1 | X)$
+      (c) Putting your answers to (a) and (b) together, what are the benefits and drawbacks of imposing restrictions on the OLS estimator?\newline
+      Imposing restrictions on the OLS estimator maintains unbiasedness of the OLS estimator under the given restrictions. However, if this assumption were to fail, Obviously, when the number of parameters increase the sum of squared residuals decreases as more of the variation in the data is able to be captured. However, that can come with a decrease in the power of these regressors. So, there is always a tradeoff in power and simplicity (or usefulness) of the model and the minimization of the variance when choosing to accept or reject a constrained model. Further, increasing the number of regressors can only decrease the overall sum of the squared residuals for the model, but the individual parameters can become much less precise when irrelevant variables are introduced (in other words, less powerful regressors).
+  3. Consider prediction in the context of the bivariate regression model given by\newline
+  $y_i=\alpha+\beta x_i+\epsilon_i,$&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;$i=1,...,n.$\newline
+  When the objective is to predict an out-of-sample observation \newline
+  $y^0_i =\alpha+\beta x^0_i +\epsilon_0^i$\newline (where $x^0_i$ is observed). The prediction variance can be written as \newline $\sigma^2[1 + \frac{1}{n} + \frac{(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}]$ \newline
+  Sometimes, however, interest attaches not to predicting a specific value of the dependent
+variable, but rather to predicting the mean value of the dependent variable associated with a particular value of the regressor, $x^0_i$.
+    (a) Write down the prediction error for this mean prediction problem.\newline
+    The actual value of some $y_i^0$ associated with a regressor $x_i^0$ would be $y_i^0={x'}_i^0 \beta+\epsilon_i^0$. Then, it follows that $\hat{y_i}=x'^0_i b$ is the best, linear, unbiased estimator for $E[y_i^0|x_i^0]={x'}_i^0\beta$. Then, the prediction error is $e_i^0=\hat{y_i}^0-y_i^0=(b-\beta)'x_i^0-\epsilon_i^0$.\newline To predict the mean value of the dependant variable, $\bar{y}=\frac{\sum_{i=1}^n y_i}{n}$, the prediction error would be $\bar{e}^0=\frac{\sum_{i=1}^n \hat{y}_i}{n}-\frac{\sum_{i=1}^n y_i}{n}=\frac{\sum_{i=1}^n [\hat{y}_i -  y_i]}{n}=\frac{\sum_{i=1}^n[(b-\beta)'x_i^0-\epsilon_i^0]}{n}$
+    (b) Derive the mean prediction variance, that is, the variance of the prediction error for this mean prediction problem.\newline
+    $\bar{e}^0=\frac{\sum_{i=1}^n e_i^0}{n}$\newline
+    $\Rightarrow V[\bar{e}^0|X,x_i^0]=V[\frac{\sum_{i=1}^n e_i^0}{n}]$\newline
+    $\Rightarrow \frac{\sum_{i=1}^n V[{e_i^0}]}{n}$\newline
+    $\Rightarrow \frac{\sum_{i=1}^n\sigma^2[1 + \frac{1}{n} + \frac{(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}]}{n}$\newline
+    $\Rightarrow \frac{\sum_{i=1}^n[\sigma^2 + \frac{\sigma^2}{n} + \frac{\sigma^2(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}]}{n}$\newline
+    $\Rightarrow \frac{n\cdot\sigma^2+\sigma^2+\sum_{i=1}^n\frac{\sigma^2(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}}{n}$\newline
+    $\Rightarrow \sigma^2+\frac{\sigma^2}{n}+\frac{\sum_{i=1}^n\frac{\sigma^2(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}}{n}$\newline
+    $\Rightarrow \sigma^2+\frac{\sigma^2}{n}+{\frac{\sigma^2(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}}$\newline
+    $$\Rightarrow V[\bar{e}^0|X,x_i^0]=\sigma^2[1+\frac{1}{n}+{\frac{(x^0_i-\bar{x})^2}{\sum_{i=1}^n(x_i-\bar{x})^2}}]$$
+    (c) Compare the mean prediction variance to the prediction variance from the original problem and explain the difference.\newline
+    We find that the mean prediction variance is equivalent to the prior computed predicition variance from the original problem.
+  
+##*B. Computational Problems*
+
+  1. Using the pp420_data.dta data set, regress earnings on education, age, and age squared. Now carry out the following regressions:
+```{r B1, include=TRUE}
+library(haven)
+require(tidyr)
+pp420_data <- read_dta("~/Downloads/pp420_data.dta")
+  dat <- pp420_data
+  earn <- dat$earn
+  welf <- dat$adcc
+  tot <- dat$tinc
+  educ <- dat$higrade 
+  age <- dat$age
+  agesq <- dat$agesq
+b1 <- lm(earn ~ educ+age+agesq, dat)
+```
+
+  (a) Regress earnings on age and age squared; retain the residuals
+  
+```{r B1a}
+b1a <-lm(earn~age+agesq, dat)
+resa <- b1a$residuals
+```
+      
+  (b) Regress education on age and age squared; retain the residuals
+  
+```{r B1b}
+b1b <-lm(educ~age+agesq, dat)
+resb <- b1b$residuals
+```
+  
+  (c) Regress the first set of residuals on the second. Compare the slope coefficient (and standard error) to the education coefficient (and standard error) from the original regression.
+  
+```{r B1c}
+require(car)
+b1c <-lm(resa~resb)
+compareCoefs(b1,b1c,se=TRUE,print=TRUE)
+```
+The slope coefficient and standard error between the education parameter in the original model (Model 1) and the new model (Model 2) are equivalent; they are $114.61$ and $9.75$, respectively.
+
+  (d) Regress earnings on the second set of residuals. Compare the results to those you obtained in part (c) and explain.
+  
+```{r B1d}
+b1d <-lm(earn~resb, dat)
+compareCoefs(b1,b1d)
+```      
+Again, the slope coefficient and standard error between the education parameter in the original model (Model 1) and the new model (Model 2) are equivalent; they are $114.61$ and $9.75$, respectively.
+
+  2. Again, regress earnings on education, age, and age squared.
+  
+```{r B2}
+b2 <- lm(earn ~ educ + age + agesq, dat)
+```
+  
+  (a) What is the standard error of the regression? What is the standard error of the education coefficient? The age coefficient?
+  
+```{r B2a}
+compareCoefs(b2)
+```
+The standard errors for the education and age coefficients were 9.75 and 15.6, respectively.
+
+  (b) Print out the covariance matrix.
+  
+```{r B2b}
+covmat <- vcov(b2)
+covmat
+```
+  
+  (c) What is the covariance between the education coefficient and the age coefficient? 
+  
+```{r B2c}
+covmat[2,3]
+```
+The covariance between education and age is approximately -10.
+
+  (d) Compute $(X’X)^{-1}$ without using Stata’s matrix inversion commands.
+  
+```{r B2d}
+X1 <- b2[["model"]][["educ"]]
+X2 <- b2[["model"]][["age"]]
+X3 <- b2[["model"]][["agesq"]]
+X <- cbind(X1,X2,X3)
+Xt <- t(X)
+XtX <- Xt %*% X
+XtXinv <- 1/XtX
+XtXinv
+```
+
+  3. Based on the same regression, assume that the GM assumptions hold, and carry out tests of the following hypotheses:
+  
+  (a) $H_0: b_{educ}=0$
+      
+```{r B3a}
+linearHypothesis(b2,c("educ = 0"),test="F")      
+```
+  
+  (b) $H_0: b_{educ}=2b_{age}$
+      Carry out this test by hand, using the estimated covariance matrix, then use the test command to carry it out. Compare the results.
+      
+```{r B3b}
+R <- matrix(c(1,-2,0), nrow = 1, ncol = 3, byrow = TRUE)
+Rt <- t(R)
+q = 0
+J = 1
+b3 <- lm(earn ~ educ + age + agesq, dat)
+b <- b3$coefficients[2:4]
+X1 <- b3[["model"]][["educ"]]
+X2 <- b3[["model"]][["age"]]
+X3 <- b3[["model"]][["agesq"]]
+X <- cbind(X1,X2,X3)
+Xt <- t(X)
+XtX <- Xt %*% X
+XtXinv <- 1/XtX
+m <- R%*%b #q=0 so we can ignore the -q
+mt <- t(m)
+cov <- vcov(b3)
+cov <- cov[(2:4),(2:4)]
+A <- cov %*% XtXinv
+Fnum <- mt*(R%*%A%*% Rt)*m
+Ftest <- Fnum/J
+Ftest
+linearHypothesis(b3,c("educ - 2 age = 0"),test="F")  
+```
+
+  (c) $H0: b_{age} =b_{agesq} =0$
+      First carry this out by computing two regressions and using a calculator. Then use the testparm command. Compare the results.
+      
+```{r B3c}
+library(survey)
+lm.null <- lm(earn ~ educ, dat) 
+lm.full <- lm(earn ~ educ + age + agesq, dat)
+yhat.null <- lm.null$fitted.values
+ybar.null <- mean(yhat.null)
+yhat.full <- lm.full$fitted.values
+ybar.full <- mean(yhat.full)
+J <- 2
+n <- length(lm.full$fitted.values)
+K <- length(lm.full$coefficients)
+ESSc <- (sum(yhat.null - ybar.null))^2
+ESSu <- (sum(yhat.full - ybar.full))^2
+Fnum <- (ESSc - ESSu)/J
+Fden <- ESSu/(n-K)
+Fstat <- Fnum/Fden
+Fstat
+#equivalent to Stata's testparm
+regTermTest(lm.full,test.terms=c("age","agesq"),method="Wald")
+```

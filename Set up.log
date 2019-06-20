@@ -1,0 +1,57 @@
+-----------------------------------------------------------------------------------------------------------------------
+      name:  <unnamed>
+       log:  /Users/morganconklin/Desktop/UC/42100/Set up.log
+  log type:  text
+ opened on:   4 Jun 2019, 18:30:04
+
+. 
+. /* 
+> Results for:
+> // Table 1 */
+. 
+. // Add .ado that count the # of unique observations in an active dataset
+. ssc install unique
+checking unique consistency and verifying not already installed...
+all files already exist and are up to date.
+
+. 
+. clear all
+
+. set more off
+
+. 
+. matrix Felon = J(9, 13, -9)
+
+. 
+. //
+. // Observable Chacteristics of All Iowa Discharges from post 1/1/2002 - 2/28/2012
+. // Only Observe Gender and Age
+. // Row 1 is All Discharges
+. // Row 2 is Felony Discharges
+. //
+. 
+. use "The Politics of the Restoration of Ex-Felon Voting Rights/VFFelonMatch01082013_0.dta", clear
+file The Politics of the Restoration of Ex-Felon Voting Rights/VFFelonMatch01082013_0.dta not found
+r(601);
+
+end of do-file
+
+r(601);
+
+. do "/var/folders/0n/rw6w_2096c7gk2hsvjk4frhc0000gn/T//SD54336.000000"
+
+. use "The Politics of the Restoration of Ex-Felon Voting Rights/VFFelonMatch01082013_0.dta", clear
+file The Politics of the Restoration of Ex-Felon Voting Rights/VFFelonMatch01082013_0.dta not found
+r(601);
+
+end of do-file
+
+r(601);
+
+. use "/Users/morganconklin/Desktop/UC/41103/The Politics of the Restoration of Ex-Felon Voting Rights/VFFelonMatch0108
+> 2013_0.dta"
+
+. do "/var/folders/0n/rw6w_2096c7gk2hsvjk4frhc0000gn/T//SD54336.000000"
+
+. // Add the Path to Read in Datasets Here (Output Will Go In Same Folder)
+. cap log close

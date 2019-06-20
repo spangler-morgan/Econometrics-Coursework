@@ -1,0 +1,325 @@
+---
+title: "PPHA 41400"
+author: "Morgan Conklin Spangler"
+date: "11/28/2018"
+header-includes:
+    - \usepackage{setspace}\onehalfspacing
+    - \usepackage{tcolorbox}
+output: pdf_document
+---
+
+```{r, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.pos='h')
+```
+
+```{r setup, message = FALSE, warning = FALSE}
+library(dummies)
+library(rms)
+library(dplyr)
+library(MatchIt)
+library(ggplot2)
+if (!require("ipumsr")) stop("Reading IPUMS data into R requires the ipumsr package. It can be installed using the following command: install.packages('ipumsr')")
+require(ISLR)
+ddi <- read_ipums_ddi("usa_00002.xml")
+data <- read_ipums_micro(ddi)
+data$YEAR <- data$DATANUM <- data$CBSERIAL <- data$SERIAL <- data$STATEFIP <- data$STATEICP <- data$GQ <- data$PERNUM <- data$SEX <- data$RACED <- data$HISPAND <- data$SCHOOL<- data$EDUC <- data$HHWT <- NULL
+childdummy <- ifelse(data$NCHILD > 0, 1, 0)
+metdummy <- ifelse(data$MET2013 > 0, 1, 0)
+age_20 <- ifelse(data$AGE == 20, 1, 0)
+age_21 <- ifelse(data$AGE == 21, 1, 0)
+age_22 <- ifelse(data$AGE == 22, 1, 0)
+age_23 <- ifelse(data$AGE == 23, 1, 0)
+age_24 <- ifelse(data$AGE == 24, 1, 0)
+age_25 <- ifelse(data$AGE == 25, 1, 0)
+age_26 <- ifelse(data$AGE == 26, 1, 0)
+age_27 <- ifelse(data$AGE == 27, 1, 0)
+age_28 <- ifelse(data$AGE == 28, 1, 0)
+age_29 <- ifelse(data$AGE == 29, 1, 0)
+age_30 <- ifelse(data$AGE == 30, 1, 0)
+age_31 <- ifelse(data$AGE == 31, 1, 0)
+age_32 <- ifelse(data$AGE == 32, 1, 0)
+age_33 <- ifelse(data$AGE == 33, 1, 0)
+age_34 <- ifelse(data$AGE == 34, 1, 0)
+age_35 <- ifelse(data$AGE == 35, 1, 0)
+age_36 <- ifelse(data$AGE == 36, 1, 0)
+age_37 <- ifelse(data$AGE == 37, 1, 0)
+age_38 <- ifelse(data$AGE == 38, 1, 0)
+age_39 <- ifelse(data$AGE == 39, 1, 0)
+age_40 <- ifelse(data$AGE == 40, 1, 0)
+less_hs <- ifelse(data$EDUCD <= 26, 1, 0)
+some_hs <- ifelse(data$EDUCD >= 30 & data$EDUCD <= 61, 1, 0)
+hs <- ifelse(data$EDUCD == 63, 1, 0)
+ged <- ifelse(data$EDUCD == 64, 1, 0)
+some_coll <- ifelse(data$EDUCD >=65 & data$EDUCD <= 71, 1, 0)
+associates <- ifelse(data$EDUCD == 81, 1, 0)
+bach <- ifelse(data$EDUCD == 101, 1, 0)
+mas <- ifelse(data$EDUCD == 114, 1, 0)
+profess <- ifelse(data$EDUCD == 115, 1, 0)
+doct <- ifelse(data$EDUCD == 116, 1, 0)
+data <- cbind(data,childdummy, metdummy, age_20, age_21, age_22, age_23, age_24, age_25, age_26, age_27, age_28, age_29, age_30, age_31, age_32, age_33, age_34, age_35, age_36, age_37, age_38, age_39, age_40, less_hs, some_hs, hs, ged, some_coll, associates, bach, mas, profess, doct)
+newdata <- subset(data,HISPAN==0)
+newdata <- subset(data, RACE == 1)
+```
+```{r k-nearest, message=FALSE, warning=FALSE}
+newdata %>%
+  group_by(childdummy) %>%
+  summarise(n_indiv = n(), mean_hrs = mean(UHRSWORK), se_hrs = sd(UHRSWORK) / sqrt(n_indiv))
+
+newdata %>%
+  group_by(childdummy) %>%
+  summarise(n_indiv=n(),mean_wage=mean(INCWAGE), se_wage = sd(INCWAGE) / sqrt(n_indiv))
+
+newdata %>%
+  group_by(childdummy) %>%
+  summarise(n_indiv = n(), mean_earn=mean(INCEARN), se_earn = sd(INCEARN)/sqrt(n_indiv))
+
+with(newdata, t.test(UHRSWORK ~ childdummy))
+with(newdata, t.test(INCWAGE ~ childdummy))
+with(newdata, t.test(INCEARN ~ childdummy))
+
+datacov <- c('metdummy', 'age_20', 'age_21', 'age_22', 'age_23', 'age_24', 'age_25', 'age_26', 'age_27', 'age_28', 'age_29', 'age_30', 'age_31', 'age_32', 'age_33', 'age_34', 'age_35', 'age_36', 'age_37', 'age_38', 'age_39', 'age_40', 'less_hs', 'some_hs', 'hs', 'ged', 'some_coll', 'associates', 'bach', 'mas', 'profess', 'doct')
+newdata %>% 
+  group_by(childdummy) %>%
+  select(one_of(datacov)) %>%
+  summarise_all(funs(mean(.,na.rm=T)))
+lapply(datacov, function(v) {
+  t.test(newdata[,v]-newdata[,'childdummy'])
+})
+
+ps <- glm(childdummy ~ age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, data= newdata, weights = newdata$PERWT, family = binomial)
+summary(ps)
+
+ps_df <- data.frame(pr_score = predict(ps,type="response"), childdummy = ps$model$childdummy)
+head(ps_df)
+
+labs <- paste("Actual type:", c("No children", "Children"))
+ps_df %>%
+  mutate(childdummy = ifelse(childdummy==1, labs[2], labs[1])) %>%
+  ggplot(aes(x=pr_score)) +
+  geom_histogram(color="white") +
+  facet_wrap(-childdummy) +
+  xlab("Probability of having children") +
+  theme_bw()
+
+dat_hrsnomiss <- newdata %>%
+  select(UHRSWORK, childdummy, one_of(datacov)) %>%
+  na.omit()
+dat_wagenomiss <- newdata %>%
+  select(INCWAGE, childdummy, one_of(datacov)) %>%
+  na.omit()
+dat_earnnomiss <- newdata %>%
+  select(INCEARN, childdummy, one_of(datacov)) %>%
+  na.omit()
+hrs_match <- matchit(childdummy - age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, method = "nearest", data = dat_hrsnomiss)
+wage_match <- matchit(childdummy - age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, method = "nearest", data = dat_wagenomiss)
+earn_match <- matchit(childdummy - age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, method = "nearest", data = dat_earnnomiss)
+hrs_m <- match.data(hrs_match)
+dim(hrs_m)
+wage_m <- match.data(wage_match)
+dim(wage_m)
+earn_m <- match.data(earn_match)
+dim(earn_m)
+
+fn_bal <- function(dta, variable) {
+  dta$variable <- dta[, variable]
+  dta$childdummy <- as.factor(dta$childdummy)
+  support <- c(min(dta$variable), max(dta$variable))
+  ggplot(dta, aes(x = distance, y = variable, color = childdummy)) +
+    geom_point(alpha = 0.2, size = 1.3) +
+    geom_smooth(method = "loess", se = F) +
+    xlab("Propensity score") +
+    ylab(variable) +
+    theme_bw() +
+    ylim(support)
+}
+
+library(gridExtra)
+grid.arrange(
+   fn_bal(hrs_m, "age20"),
+   fn_bal(hrs_m, "age21") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age22"),
+   fn_bal(hrs_m, "age23") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age24"),
+   fn_bal(hrs_m, "age25") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age26"),
+   fn_bal(hrs_m, "age27") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age28"),
+   fn_bal(hrs_m, "age29") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age30"),
+   fn_bal(hrs_m, "age31") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age32"),
+   fn_bal(hrs_m, "age33") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age34"),
+   fn_bal(hrs_m, "age35") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age36"),
+   fn_bal(hrs_m, "age37") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age38"),
+   fn_bal(hrs_m, "age39") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "age40"),
+   fn_bal(hrs_m, "less_hs") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "some_hs"),
+   fn_bal(hrs_m, "hs") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "ged"),
+   fn_bal(hrs_m, "some_coll") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "associates"),
+   fn_bal(hrs_m, "bach") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "mas"),
+   fn_bal(hrs_m, "profess") + theme(legend.position = "none"),
+   fn_bal(hrs_m, "doct"),
+   fn_bal(hrs_m, "metdummy") + theme(legend.position = "none"),
+   nrow = 4, widths = c(1, 0.8)
+)
+
+grid.arrange(
+   fn_bal(wage_m, "age20"),
+   fn_bal(wage_m, "age21") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age22"),
+   fn_bal(wage_m, "age23") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age24"),
+   fn_bal(wage_m, "age25") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age26"),
+   fn_bal(wage_m, "age27") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age28"),
+   fn_bal(wage_m, "age29") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age30"),
+   fn_bal(wage_m, "age31") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age32"),
+   fn_bal(wage_m, "age33") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age34"),
+   fn_bal(wage_m, "age35") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age36"),
+   fn_bal(wage_m, "age37") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age38"),
+   fn_bal(wage_m, "age39") + theme(legend.position = "none"),
+   fn_bal(wage_m, "age40"),
+   fn_bal(wage_m, "less_hs") + theme(legend.position = "none"),
+   fn_bal(wage_m, "some_hs"),
+   fn_bal(wage_m, "hs") + theme(legend.position = "none"),
+   fn_bal(wage_m, "ged"),
+   fn_bal(wage_m, "some_coll") + theme(legend.position = "none"),
+   fn_bal(wage_m, "associates"),
+   fn_bal(wage_m, "bach") + theme(legend.position = "none"),
+   fn_bal(wage_m, "mas"),
+   fn_bal(wage_m, "profess") + theme(legend.position = "none"),
+   fn_bal(wage_m, "doct"),
+   fn_bal(wage_m, "metdummy") + theme(legend.position = "none"),
+   nrow = 4, widths = c(1, 0.8)
+)
+
+grid.arrange(
+   fn_bal(earn_m, "age20"),
+   fn_bal(earn_m, "age21") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age22"),
+   fn_bal(earn_m, "age23") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age24"),
+   fn_bal(earn_m, "age25") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age26"),
+   fn_bal(earn_m, "age27") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age28"),
+   fn_bal(earn_m, "age29") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age30"),
+   fn_bal(earn_m, "age31") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age32"),
+   fn_bal(earn_m, "age33") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age34"),
+   fn_bal(earn_m, "age35") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age36"),
+   fn_bal(earn_m, "age37") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age38"),
+   fn_bal(earn_m, "age39") + theme(legend.position = "none"),
+   fn_bal(earn_m, "age40"),
+   fn_bal(earn_m, "less_hs") + theme(legend.position = "none"),
+   fn_bal(earn_m, "some_hs"),
+   fn_bal(earn_m, "hs") + theme(legend.position = "none"),
+   fn_bal(earn_m, "ged"),
+   fn_bal(earn_m, "some_coll") + theme(legend.position = "none"),
+   fn_bal(earn_m, "associates"),
+   fn_bal(earn_m, "bach") + theme(legend.position = "none"),
+   fn_bal(earn_m, "mas"),
+   fn_bal(earn_m, "profess") + theme(legend.position = "none"),
+   fn_bal(earn_m, "doct"),
+   fn_bal(earn_m, "metdummy") + theme(legend.position = "none"),
+   nrow = 4, widths = c(1, 0.8)
+)
+
+hrs_m %>%
+  group_by(childdummy) %>%
+  select(one_of(datacov)) %>%
+  summarise_all(funs(mean))
+
+wage_m %>%
+  group_by(childdummy) %>%
+  select(one_of(datacov)) %>%
+  summarise_all(funs(mean))
+
+earn_m %>%
+  group_by(childdummy) %>%
+  select(one_of(datacov)) %>%
+  summarise_all(funs(mean))
+
+lapply(datacov, function(v) {
+  t.test(hrs_m[,v]~hrs_m$childdummy)
+})
+lapply(datacov, function(v) {
+  t.test(wage_m[,v]~wage_m$childdummy)
+})
+lapply(datacov, function(v) {
+  t.test(earn_m[,v]~earn_m$childdummy)
+})
+
+with(hrs_m, t.test(UHRSWORK ~ childdummy))
+with(wage_m, t.test(INCWAGE ~ childdummy))
+with(earn_m, t.test(INCEARN ~ childdummy))
+```
+  
+```{r logit, message = FALSE, warning = FALSE}
+childlogit <- glm(childdummy ~ age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, data= newdata, weights = newdata$PERWT, family = binomial)
+summary(childlogit)
+p<-predict(childlogit, type="response")
+p2 <- p:p
+p3 <- p2:p
+p4 <- p3:p
+p5 <- p4:p
+p6 <- p5:p
+p7 <- p6:p
+p8 <- p7:p
+p9 <- p8:p
+p10 <- p9:p
+
+hrslogit1 <- glm(UHRSWORK ~ p, data= newdata, weights = newdata$PERWT, family = binomial)
+hrs_predict1 <- predict(hrslogit1, type="response")
+hrslogit2 <- glm(UHRSWORK ~ p + p2, data=newdata, weights=newdata$PERWT, family = binomial)
+hrs_predict2 <- predcit(hrslogit2, type="response")
+hrslogit3 <- glm(UHRSWORK ~ p + p2 + p3, data= newdata, weights = newdata$PERWT, family = binomial)
+hrs_predict3 <- predict(hrslogit3, type="response")
+hrslogit4 <- glm(UHRSWORK ~ p + p3 + p3 + p4, data=newdata, weights=newdata$PERWT, family = binomial)
+hrs_predict4 <- predcit(hrslogit4, type="response")
+hrslogit5 <- glm(UHRSWORK ~ p + p2 + p3 + p4 + p5, data= newdata, weights = newdata$PERWT, family = binomial)
+hrs_predict5 <- predict(hrslogit5, type="response")
+hrslogit6 <- glm(UHRSWORK ~ p + p3 + p3 + p4 + p5 + p6, data=newdata, weights=newdata$PERWT, family = binomial)
+hrs_predict6 <- predcit(hrslogit6, type="response")
+hrslogit7 <- glm(UHRSWORK ~ p + p2 + p3 + p4 + p5 + p6 + p7, data= newdata, weights = newdata$PERWT, family = binomial)
+hrs_predict7 <- predict(hrslogit7, type="response")
+hrslogit8 <- glm(UHRSWORK ~ p + p3 + p3 + p4 + p5 + p6 + p7 + p8, data=newdata, weights=newdata$PERWT, family = binomial)
+hrs_predict8 <- predcit(hrslogit8, type="response")
+hrslogit9 <- glm(UHRSWORK ~ p + p2 + p3 + p4 + p5 + p6 + p7 + p8 + p9, data= newdata, weights = newdata$PERWT, family = binomial)
+hrs_predict9 <- predict(hrslogit9, type="response")
+hrslogit10 <- glm(UHRSWORK ~ p + p3 + p3 + p4 + p5 + p6 + p7 + p8 + p9 + p10, data=newdata, weights=newdata$PERWT, family = binomial)
+hrs_predict10 <- predcit(hrslogit10, type="response")
+summary(glm_hrs)
+hist(glm_predict)
+glm_wage <- glm(INCWAGE ~ childdummy + age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + childdummy:age_20 + childdummy:age_21 + childdummy:age_22 + childdummy:age_23 + childdummy:age_24 + childdummy:age_25 + childdummy:age_26 + childdummy:age_27 + childdummy:age_28 + childdummy:age_29 + childdummy:age_30 + childdummy:age_31 + childdummy:age_32 + childdummy:age_33 + childdummy:age_34 + childdummy:age_35 + childdummy:age_36 + childdummy:age_37 + childdummy:age_38 + childdummy:age_39 + childdummy:age_40 + childdummy:less_hs + childdummy:some_hs + childdummy:hs + childdummy:ged + childdummy:some_coll + childdummy:associates + childdummy:bach + childdummy:mas + childdummy:profess + childdummy:doct + childdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, data= newdata, weights = PERWT)
+glm_predict <- predict(glm_wage, type="response")
+summary(glm_wage)
+hist(glm_predict)
+glm_earn <- glm(INCEARN ~ childdummy + age_20 + age_21 + age_22 + age_23 + age_24 + age_25 + age_26 + age_27 + age_28 + age_29 + age_30 + age_31 + age_32 + age_33 + age_34 + age_35 + age_36 + age_37 + age_38 + age_39 + age_40 + less_hs + some_hs + hs + ged + some_coll + associates + bach + mas + profess + doct + metdummy + childdummy:childdummy + age_20:age_20 + age_21:age_21 + age_22:age_22 + age_23:age_23 + age_24:age_24 + age_25:age_25 + age_26:age_26 + age_27:age_27 + age_28:age_28 + age_29:age_29 + age_30:age_30 + age_31:age_31 + age_32:age_32 + age_33:age_33 + age_34:age_34 + age_35:age_35 + age_36:age_36 + age_37:age_37 + age_38:age_38 + age_39:age_39 + age_40:age_40 + less_hs:less_hs +  some_hs:some_hs + hs:hs + ged:ged + some_coll:some_coll + associates:associates + bach:bach + mas:mas + profess:profess + doct:doct + metdummy:metdummy + childdummy:age_20 + childdummy:age_21 + childdummy:age_22 + childdummy:age_23 + childdummy:age_24 + childdummy:age_25 + childdummy:age_26 + childdummy:age_27 + childdummy:age_28 + childdummy:age_29 + childdummy:age_30 + childdummy:age_31 + childdummy:age_32 + childdummy:age_33 + childdummy:age_34 + childdummy:age_35 + childdummy:age_36 + childdummy:age_37 + childdummy:age_38 + childdummy:age_39 + childdummy:age_40 + childdummy:less_hs + childdummy:some_hs + childdummy:hs + childdummy:ged + childdummy:some_coll + childdummy:associates + childdummy:bach + childdummy:mas + childdummy:profess + childdummy:doct + childdummy:metdummy + less_hs:age_20 + less_hs:age_21 + less_hs:age_22 + less_hs:age_23 + less_hs:age_24 + less_hs:age_25 + less_hs:age_26 + less_hs:age_27 + less_hs:age_28 + less_hs:age_29 + less_hs:age_30 + less_hs:age_31 + less_hs:age_32 + less_hs:age_33 + less_hs:age_34 + less_hs:age_35 + less_hs:age_36 + less_hs:age_37 + less_hs:age_38 + less_hs:age_39 + less_hs:age_40 + less_hs:metdummy + some_hs:age_20 + some_hs:age_21 + some_hs:age_22 + some_hs:age_23 + some_hs:age_24 + some_hs:age_25 + some_hs:age_26 + some_hs:age_27 + some_hs:age_28 + some_hs:age_29 + some_hs:age_30 + some_hs:age_31 + some_hs:age_32 + some_hs:age_33 + some_hs:age_34 + some_hs:age_35 + some_hs:age_36 + some_hs:age_37 + some_hs:age_38 + some_hs:age_39 + some_hs:age_40 + some_hs:metdummy + hs:age_20 + hs:age_21 + hs:age_22 + hs:age_23 + hs:age_24 + hs:age_25 + hs:age_26 + hs:age_27 + hs:age_28 + hs:age_29 + hs:age_30 + hs:age_31 + hs:age_32 + hs:age_33 + hs:age_34 + hs:age_35 + hs:age_36 + hs:age_37 + hs:age_38 + hs:age_39 + hs:age_40 + hs:metdummy + ged:age_20 + ged:age_21 + ged:age_22 + ged:age_23 + ged:age_24 + ged:age_25 + ged:age_26 + ged:age_27 + ged:age_28 + ged:age_29 + ged:age_30 + ged:age_31 + ged:age_32 + ged:age_33 + ged:age_34 + ged:age_35 + ged:age_36 + ged:age_37 + ged:age_38 + ged:age_39 + ged:age_40 + ged:metdummy + some_coll:age_20 + some_coll:age_21 + some_coll:age_22 + some_coll:age_23 + some_coll:age_24 + some_coll:age_25 + some_coll:age_26 + some_coll:age_27 + some_coll:age_28 + some_coll:age_29 + some_coll:age_30 + some_coll:age_31 + some_coll:age_32 + some_coll:age_33 + some_coll:age_34 + some_coll:age_35 + some_coll:age_36 + some_coll:age_37 + some_coll:age_38 + some_coll:age_39 + some_coll:age_40 + some_coll:metdummy + associates:age_20 + associates:age_21 + associates:age_22 + associates:age_23 + associates:age_24 + associates:age_25 + associates:age_26 + associates:age_27 + associates:age_28 + associates:age_29 + associates:age_30 + associates:age_31 + associates:age_32 + associates:age_33 + associates:age_34 + associates:age_35 + associates:age_36 + associates:age_37 + associates:age_38 + associates:age_39 + associates:age_40 + associates:metdummy + bach:age_20 + bach:age_21 + bach:age_22 + bach:age_23 + bach:age_24 + bach:age_25 + bach:age_26 + bach:age_27 + bach:age_28 + bach:age_29 + bach:age_30 + bach:age_31 + bach:age_32 + bach:age_33 + bach:age_34 + bach:age_35 + bach:age_36 + bach:age_37 + bach:age_38 + bach:age_39 + bach:age_40 + bach:metdummy + mas:age_20 + mas:age_21 + mas:age_22 + mas:age_23 + mas:age_24 + mas:age_25 + mas:age_26 + mas:age_27 + mas:age_28 + mas:age_29 + mas:age_30 + mas:age_31 + mas:age_32 + mas:age_33 + mas:age_34 + mas:age_35 + mas:age_36 + mas:age_37 + mas:age_38 + mas:age_39 + mas:age_40 + mas:metdummy + profess:age_20 + profess:age_21 + profess:age_22 + profess:age_23 + profess:age_24 + profess:age_25 + profess:age_26 + profess:age_27 + profess:age_28 + profess:age_29 + profess:age_30 + profess:age_31 + profess:age_32 + profess:age_33 + profess:age_34 + profess:age_35 + profess:age_36 + profess:age_37 + profess:age_38 + profess:age_39 + profess:age_40 + profess:metdummy + doct:age_20 + doct:age_21 + doct:age_22 + doct:age_23 + doct:age_24 + doct:age_25 + doct:age_26 + doct:age_27 + doct:age_28 + doct:age_29 + doct:age_30 + doct:age_31 + doct:age_32 + doct:age_33 + doct:age_34 + doct:age_35 + doct:age_36 + doct:age_37 + doct:age_38 + doct:age_39 + doct:age_40 + doct:metdummy + metdummy:age_20 + metdummy:age_21 + metdummy:age_22 + metdummy:age_23 + metdummy:age_24 + metdummy:age_25 + metdummy:age_26 + metdummy:age_27 + metdummy:age_28 + metdummy:age_29 + metdummy:age_30 + metdummy:age_31 + metdummy:age_32 + metdummy:age_33 + metdummy:age_34 + metdummy:age_35 + metdummy:age_36 + metdummy:age_37 + metdummy:age_38 + metdummy:age_39 + metdummy:age_40, data= newdata, weights = PERWT)  
+
+glm_predict <- predict(glm_earn, type="response")  
+  
+summary(glm_earn)
+  
+hist(glm_predict)
+```
+  
+##1
+

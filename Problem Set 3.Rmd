@@ -1,0 +1,182 @@
+---
+title: "Problem Set 3"
+author: "Morgan Conklin Spangler"
+date: "2/11/2019"
+output: pdf_document
+header-includes:
+  - \usepackage{setspace}\onehalfspacing
+  - \usepackage{ amssymb }
+  - \usepackage{amsmath}
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{ wasysym }
+  - \usepackage{mathtools}
+  - \usepackage{tcolorbox}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, results='markup',strip.white=TRUE)
+```
+
+##*A. Analytical Problems*
+  1. Consider the model
+      (1) $y_i=\beta_1+\beta_{2} x_{i2} +\epsilon_i \ \ \  i=1,...,n$\newline 
+      where the last $n_2<n$ observations on $x_{i2}$ are missing. One thing you could do is simply drop the last $n_2$ observations, estimating
+      (2) $y_i=\beta_1+\beta_{2}x_{i2}+\epsilon_i \ \ \ \ \ i=1,...,n-n_2$\newline 
+      Another thing you could do is estimate the following regression, which makes use of a "missing-value flag"
+      (3) $y_i=\beta_1+\beta_{2}x^*_{i2}+\beta_3D_{i2}+\epsilon_i \ \ \ \ \ i=1,...,n$\newline where\newline $x^*_{i2}=x_{i2}, \ \ \ i=1,...,n-n_2$\newline $x^*_{i2}=0, \ \ \ i=n-n_2+1,...,n$\newline and\newline $D_{i2}=0, \ \ \ i=1,...,n-n_2$\newline $D_{i2}=1, \ \ \ i=n-n_2+1,...,n$\newline
+          (a) Show that OLS applied to (2) and (3) results in the same estimate of $\beta_2$.
+          To solve for the OLS parameter estimates, $\beta$, we have that $\beta = (x'x)^{-1}x'y$. So, for equations (2) and (3), $$(2) \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \beta_{(2)} =\begin{pmatrix}
+n-n_2 & \sum_{i=1}^{n-n_2} x_{i2}\\
+\sum_{i=1}^{n-n_2} x_{i2} & \sum_{i=1}^{n-n_2} x_{i2}^2
+\end{pmatrix}^{-1} \begin{pmatrix} \sum_{i=1}^{n-n_2} y_i \\ \sum_{i=1}^{n-n_2} x_{i2}y_i \end{pmatrix} = \begin{pmatrix} \beta_1 \\ \beta_2\end{pmatrix}$$ $$(3) \ \ \ \ \ \ \ \ \beta_{(3)} =\begin{pmatrix}
+n & \sum_{i=1}^{n-n_2} x^*_{i2} & \sum_{i=1}^n D_{i2} \\
+\sum_{i=1}^{n-n_2} x^*_{i2} & \sum_{i=1}^{n-n_2} x^{*2}_{i2} & \sum_{i=1}^n x^*_{i2}D_{i2} \\
+\sum_{i=1}^n D_{i2} & \sum_{i=1}^n x^*_{i2}D_{i2} & \sum_{i=1}^n D^2_{i2} \\
+\end{pmatrix}^{-1} \begin{pmatrix} \sum_{i=1}^n y_i \\ \sum_{i=1}^{n-n_2} x^*_{i2}y_i \\ \sum_{i=1}^n D_{i2}y_i \end{pmatrix} = \begin{pmatrix} \beta_1 \\ \beta_2 \\ \beta_3\end{pmatrix}$$ $$\Rightarrow \beta_{(3)} =\begin{pmatrix}
+n & \sum_{i=1}^{n-n_2} x^*_{i2} & n_2 \\
+\sum_{i=1}^{n-n_2} x^*_{i2} & \sum_{i=1}^{n-n_2} x^{*2}_{i2} & 0 \\
+n_2 & 0 & n_2^2 \\
+\end{pmatrix}^{-1} \begin{pmatrix} \sum_{i=1}^n y_i \\ \sum_{i=1}^{n-n_2} x^*_{i2}y_i \\ \sum_{i=n-n_2+1}^n D_{i2}y_i \end{pmatrix} = \begin{pmatrix} \beta_1 \\ \beta_2 \\ \beta_3\end{pmatrix}$$
+So, in solving for $\beta_2$, we find $$(2) \ \ \ \ \ \frac{\sum_{i=1}^{n-n_2} y_i}{\sum_{i=1}^{n-n_2} x_{i2}}$$ $$(3) \ \ \ \ \ \frac{\sum_{i=1}^{n-n_2} y_i}{\sum_{i=1}^{n-n_2} x^*_{i2}}$$
+\begin{tcolorbox}So, given that $\sum_{i=1}^{n-n_2} x_{i2}=\sum_{i=1}^{n-n_2} x^*_{i2}$, we have that $\frac{\sum_{i=1}^{n-n_2} y_i}{\sum_{i=1}^{n-n_2} x_{i2}}=\frac{\sum_{i=1}^{n-n_2} y_i}{\sum_{i=1}^{n-n_2} x^*_{i2}}$. Then, we see that these two regressions result in the same $\beta_2$.\end{tcolorbox}
+          (b) Do the two regressions yield the same R-square?
+          $$R^2=1-\frac{e'e}{y'y-n\bar{y}^2}$$ $R^2$ for (2) and (3) are $R^2_{(2)}$ and $R^2_{(3)}$, respectively. $$\Rightarrow R^2_{(2)}=1-\frac{\sum_{i=1}^{n-n_2}\epsilon_i^2}{\sum_{i=1}^{n-n_2}y_i^2-\frac{(\sum_{i=1}^{n-n_2}y_i)^2}{n-n_2}}$$ $$\Rightarrow R^2_{(3)}=1-\frac{\sum_{i=1}^n\epsilon_i^2}{\sum_{i=1}^n y_i^2-\frac{(\sum_{i=1}^n y_i)^2}{n}}$$
+          $$R^2_{(2)}-R^2_{(3)}\overset{?}{=} 0$$
+          Because equations (2) and (3) will provide the same fit for $i=1,...,n-n_2$, if we restrict equation (3) to these observations equations (2) and (3) will have the same $R^2$. So, I look at $i=n-n_2+1,...,n$ in equation (3) to see how this affects the $R^2$ for (3). $$R^2_{i=n-n_2+1,...,n}=1-\frac{\sum_{i=n-n_2+1}^n \epsilon_i^2}{\sum_{i=n-n_2+1}^n y_i^2-\frac{(\sum_{i=n-n_2+1}^n y_i)^2}{n-n+n_2}}$$ $$\Rightarrow 1-\frac{\sum_{i=n-n_2+1}^n (y_i-\beta_1-\beta_2x^*_{i2}-\beta_3D_{i2})^2}{\sum_{i=n-n_2+1}^n y_i^2-\frac{(\sum_{i=n-n_2+1}^n y_i)^2}{n_2}}$$ \begin{tcolorbox}Assuming that $\sum_{i=n-n_2+1}^n y_i^2\neq 0$ (there are nonzero observations of the dependant variable beyond $n-n_2$), then the $R^2$ for equation (3) will not equal equation (2), as equation (2) will fail to capture this fluctuation in the dependant variable for the tail of the observations.\end{tcolorbox}
+          (c) Now suppose the model is given by\newline $(4) \ \ \ y_i=\beta_1+\beta_{2}x_{i2}+\beta_3x_{i3}+\epsilon_i \ \ \ \ \ i=1,..,n$\newline where again, the last $n_2<n$ observations on $x_{i2}$ are missing. Do your answers from (a) and (b) continue to hold? $$(4) \ \ \ \ \ \ \ \ \beta_{(4)} =\begin{pmatrix}
+n & \sum_{i=1}^{n-n_2} x_{i2} & \sum_{i=1}^n x_{i3} \\
+\sum_{i=1}^{n-n_2} x_{i2} & \sum_{i=1}^{n-n_2} x^{2}_{i2} & \sum_{i=1}^n x_{i2}x_{i3} \\
+\sum_{i=1}^n x_{i3} & \sum_{i=1}^n x_{i2}x_{i3} & \sum_{i=1}^n x^2_{i3} \\
+\end{pmatrix}^{-1} \begin{pmatrix} \sum_{i=1}^n y_i \\ \sum_{i=1}^{n-n_2} x_{i2}y_i \\ \sum_{i=1}^n x_{i3}y_i \end{pmatrix} = \begin{pmatrix} \beta_1 \\ \beta_2 \\ \beta_3\end{pmatrix}$$ $$\Rightarrow \beta_{(4)} =\begin{pmatrix}
+n & \sum_{i=1}^{n-n_2} x_{i2} & \sum_{i=1}^n x_{i3} \\
+\sum_{i=1}^{n-n_2} x_{i2} & \sum_{i=1}^{n-n_2} x^{2}_{i2} & \sum_{i=1}^{n-n_2}x_{i2}x_{i3} \\
+\sum_{i=1}^n x_{i3} & \sum_{i=1}^{n-n_2} x_{i2}x_{i3} & \sum_{i=1}^n x^2_{i3} \\
+\end{pmatrix}^{-1} \begin{pmatrix} \sum_{i=1}^n y_i \\ \sum_{i=1}^{n-n_2} x_{i2}y_i \\ \sum_{i=1}^n x_{i3}y_i \end{pmatrix} = \begin{pmatrix} \beta_1 \\ \beta_2 \\ \beta_3\end{pmatrix}$$ 
+\begin{tcolorbox}Assuming that observations of $\sum x_{i3}\neq 0$ exist for $i=1,..,n-n_2$, the parameter coefficient $\beta_2$ will be different than that for equations (2) and (3). Then, by the same logic as previously, we know that the $R^2$ are not guaranteed to be the same because the best fit line will be different ($\beta_{2,(4)}\neq \beta_2$) and $\sum_{i=1}^n (y_i-\beta_1-\beta_2x_{i2}-\beta_3x_{i2})^2$ is not necessarily equal to $\sum_{i=1}^n (y_i-\beta_1-\beta_2x_{i2})^2$ or $\sum_{i=1}^n (y_i-\beta_1-\beta_2x^*_{i2}-\beta_3D_{i2})^2$.\end{tcolorbox}
+  2. Suppose that at the individual level, the model is given (in deviation form) by\newline $(1) \ \ \ y_{ij}=\beta x_{ij}+\epsilon_{ij} \ \ \ \ \ i=1,...,n;j=1,...N$\newline where $i$ indexes individuals within some larger group and $j$ indexes the groups. There are different numbers of individuals within the different groups. Expressed as group means, the model takes the form\newline $(2) \ \ \ \bar{y}_j=\bar{x}'_j\beta+\bar{u}_j \ \ \ \ \ j=1,...,N,$\newline where $\bar{z}_j=n_j^{-1}\sum_{i=1}^{n_j} z_{ij}, z=x,y.$
+<!-- (bar)x_j is a scalar -->
+      (a) Assuming that the Gauss-Markov assumptions apply to (1), derive the mean and variance of $\bar{u}_j$. Do the GM assumptions hold for (2)? 
+      $$\bar{u}_j=\bar{y}_j-\beta\bar{x}'_j \Rightarrow \bar{u}_j=n_j^{-1}\sum_{i=1}^{n_j} y_{ij}-n_j^{-1}\sum_{i=1}^{n_j} \beta x'_{ij}\Rightarrow \bar{u}_j=\frac{\sum_{i=1}^{n_j} (y_{ij}-\beta x'_{ij})}{n_j}$$
+      $$E[\bar{u}_j]=E[\frac{\sum_{i=1}^{n_j} (y_{ij}-\beta x'_{ij})}{n_j}]=\frac{\sum_{i=1}^{n_j} E(y_{ij}-\beta x'_{ij})}{n_j}=\frac{\sum_{i=1}^{n_j} E[\epsilon_{ij}]}{n_j}$$ 
+      \begin{tcolorbox}Then, given $E[\epsilon_{ij}]=0$, $E[\bar{u}_j]=0$.\end{tcolorbox} $$V(\bar{u}_j)=E[(\bar{u}_j-E[\bar{u}_j])^2]\Rightarrow E[(\bar{u}_j-0)^2]\Rightarrow E[(\frac{\sum_{i=1}^n (y_{ij}-\beta x'_{ij})}{n_j})^2]$$ $$\Rightarrow E[(\frac{\sum_{i=1}^n(\epsilon_{ij})}{n_j})^2]\Rightarrow E[\frac{\sum_{i=1}^n(\epsilon_{ij})}{n_j}\frac{\sum_{i=1}^n(\epsilon_{ij})}{n_j}]\Rightarrow \frac{\sum_{i=1}^n E[\epsilon_{ij}]}{n_j}\frac{\sum_{i=1}^n E[\epsilon_{ij}]}{n_j}\Rightarrow \frac{\sum_{i=1}^n E[\epsilon_{ij}]^2}{n_j^2}$$
+      \begin{tcolorbox}As before, given $E[\epsilon_{ij}]=0, \frac{\sum_{i=1}^n E[\epsilon_{ij}]^2}{n_j^2}$, so the variance of $\bar{u}_j$, $V(\bar{u}_j)$, must be equal to 0.\end{tcolorbox}
+      (b) Let $\hat{\beta}$ denote the OLS estimates from (2). Derive its variance in terms of $\sigma^2=V(\epsilon_{ij})$ and $n_j,j=1,...,N.$
+<!-- You can continue to assume that the GM assumptions apply to model (1) (the individual level model, not necessarily the group level model).-->\newline
+$$V(\hat{\beta})=E[(\hat{\beta}-\beta)(\hat{\beta}-\beta)']$$ $\Rightarrow E[(\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'\bar{u}_j\bar{u}'_j\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}]$\newline $\Rightarrow [(\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'E[\bar{u}_j\bar{u}'_j]\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}]$ \newline $\Rightarrow (\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'E[\frac{\sum_{i=1}^{n} (y_{ij}-\beta x'_{ij})}{n_j}(\frac{\sum_{i=1}^{n} (y_{ij}-\beta x'_{ij})}{n_j})']\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}$ \newline $\Rightarrow (\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'E[\frac{\sum_{i=1}^{n} \epsilon_{ij}}{n_j}(\frac{\sum_{i=1}^{n} \epsilon_{ij}}{n_j})']\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}$\newline $\Rightarrow (\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'E[\frac{\sum_{i=1}^{n} \epsilon_{ij}\epsilon_{ij}'}{n_j}]\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}$\newline $\Rightarrow (\bar{x}_j'\bar{x}_j)^{-1}\bar{x}_j'\frac{1}{n_j}\sum_{i=1}^{n}E[\epsilon_{ij}\epsilon_{ij}']\bar{x}_j(\bar{x}'_j\bar{x}_j)^{-1}$\newline $\Rightarrow \frac{1}{n_j}\sigma^2(\bar{x}'_j\bar{x}_j)^{-1}$ \begin{tcolorbox} $V(\hat{\beta})=\frac{1}{n_j}\sigma^2(\bar{x}'_j\bar{x}_j)^{-1}$\end{tcolorbox}
+      (c) Show that the grouped-data estimates from (2) are generally less precise than the micro-data estimates from (1).\newline The precision parameter is defined as $\theta^2=\frac{1}{Var}$ (*Greene, pg 549*). The OLS estimates from (1) have a variance of $\sigma^2 (x_{ij}'x_{ij})^{-1}$, so we denote the precision for equation (1) as $\theta^2_{(1)}=\frac{1}{\sigma^2 (x_{ij}'x_{ij})^{-1}}$. Then, from the variance of equation (2) we have $\theta_{(2)}^2=\frac{1}{\frac{1}{n_j}\sigma^2(\bar{x}'_j\bar{x}_j)^{-1}}=\frac{1}{\frac{1}{n_j}\sigma^2(n_j^{-1}\sum_{i=1}^{n_j} x'_{ij}n_j^{-1}\sum_{i=1}^{n_j} x_{ij})^{-1}}$. $$\theta^2_{1} \ \ {?} \ \ \theta^2_{2}$$ $$\Rightarrow \frac{1}{\sigma^2 (x_{ij}'x_{ij})^{-1}} \ \ {?} \ \  \frac{1}{\frac{1}{n_j}\sigma^2(n_j^{-1}\sum_{i=1}^{n_j} x'_{ij}n_j^{-1}\sum_{i=1}^{n_j} x_{ij})^{-1}}$$ $$\Rightarrow \frac{x_{ij}'x_{ij}}{\sigma^2}  \ \ {?} \ \  \frac{n_j (n_j^{-1}\sum_{i=1}^{n_j} x'_{ij}n_j^{-1}\sum_{i=1}^{n_j} x_{ij})}{\sigma^2}$$ $$\Rightarrow x_{ij}'x_{ij} \ \ {?} \ \ \frac{\sum_{i=1}^{n_j} (x'_{ij}x_{ij})}{n_j}$$ \begin{tcolorbox}$$\Rightarrow x_{ij}'x_{ij} > \frac{\sum_{i=1}^{n_j} (x'_{ij}x_{ij})}{n_j} \Rightarrow \theta^2_{(1)}>\theta^2_{(2)}$$
+      Clearly, given some number of groups $n_j>1$, the precision of the second model will be less than the first. \end{tcolorbox}
+      (d) Now suppose that you get to construct the groups. How would you form groups so as to minimize the efficiency loss from grouping?
+      \begin{tcolorbox}In order to minimize the loss in precision from forming groups, I would construct the groups as to minimize the number of them. Meaning, I would minimize $n_j$ to maximize $\theta^2_{(2)}$. Ideally, I would find that breaking the observations up into groups is unnecessary and I just have $n_j=1$ (i.e. the entire population is the group).\end{tcolorbox}
+      (e) Efficiency loss notwithstanding, the R-square from a grouped-data regression is often higher than that from its counterpart micro-data regression. Explain.
+      \begin{tcolorbox}By segmenting the data into groups we are essentially allowing for higher numbers of parameters, meaning our best fit lines will be able to find a better fit as the regressions are able to account for greater amounts of variation in the data.\end{tcolorbox}
+  3. Suppose you are working with survey data where educational attainment is coded as follows:\newline Variable name: edatt
+```{r, echo=FALSE, message=FALSE, warnings=FALSE, results='asis'}
+tabl <- "
+|Value|                                            |
+|-----|--------------------------------------------|
+|  1  |             Less than high school          |
+|  2  | High school diploma; no further schooling  |
+|  3  |     Some college but no college degree     |
+|  4  |           Bachelor's degree or higher      |
+"
+cat(tabl)
+```
+Consider the two regressions\newline $(1) \ \ \ y_i=\alpha_0+\alpha_1{edatt}_i+X_i\gamma+u_i \ \ \ \ \ i=1,...,n$\newline $(2) \ \ \ y_i=\beta_0+\beta_2D_{2i}+\beta_3D_{3i}+\beta_4D{4i}+X_i\gamma+\epsilon_i \ \ \ \ \ i=1,...,n$\newline where $y_i$ is the dependant variable for the $i^{th}$ observation; $edatt_i$ is the value of edatt for observation $i$; $D_{ij}=1$ if $edatt_i=j,j=2,3,4$; $X_i$ is a vector of other characteristics of $i$; $u_i$ and $\epsilon_i$ are zero-mean error terms that are uncorrelated with any of the regressors; and $n$ is the sample size.
+
+  (a) How do you interpret $\alpha_1$?
+  \begin{tcolorbox}$\alpha_1$ is interpreted as the estimated change in the dependant variable (i.e. earnings) for each additional level of educational attainment, regardless if that is a jump from less than highschool ($edatt_i=1$) to a high school diploma ($edatt_i=2$), some college ($edatt_i=3$) to a bachelor's degree ($edatt_i=4$), etc. For example, if you wanted to estimate the difference in going from a high school diploma ($edatt_i=2$) to a bachelors degree ($edatt_i=4$) that would be estimated as $2\alpha_i$. This parameter does not allow levels to be estimated separately.\end{tcolorbox}
+  (b) How do you interpret $\beta_0,\beta_2,\beta_3,\beta_4$?
+  \begin{tcolorbox}$\beta_0$ is the x-intercept, which is interpreted as the baseline level of the dependant variable (i.e. earnings) for individuals with no education. Assuming all individuals are at least at $edatt_i=1$, this would be the average level of earnings (or whatever the dependant variable is) for those individuals with $edatt_i=1$. If there are some with $edatt_i=0$, then this would be the average level of earnings (or other dependant variable) of those individuals with $edatt_i=1$ or 0. $\begin{cases} \beta_2 \\ \beta_3 \\ \beta_4\end{cases}$ are interpreted as the estimated change in the dependant variable (i.e. earnings) when moving $\begin{cases} edatt_i=1 \rightarrow edatt_i =2 \\ edatt_i=2 \rightarrow edatt_i=3 \\ edatt_i=3\rightarrow edatt_i=4\end{cases}$. Unlike the previous model, these parameters do allow for levels to be estimated separately.\end{tcolorbox}
+  (c) What constraints does equation (1) impose on equation (2)? State them as a null hypothesis.
+  \begin{tcolorbox} When interpreting equation (1) as the restricted model of equation (2), it imposes the constraint that each parameter $\beta$ is equal, and then this would be equivalent to $alpha_1$ in the equation (1).\newline $H_0: \beta_0=\beta_2=\beta_3=\beta_4$\end{tcolorbox}
+  (d) Explain how you would test that hypothesis. What statistic would you compute, how would you compute it, and how would you determine whether or not you should reject the null? What assumptions would you require to obtain a valid test?\newline $y_i=\beta_0+\beta_2D_{2i}+\beta_3D_{3i}+\beta_4D{4i}+X_i\gamma+\epsilon_i \ \ \ \ \ i=1,...,n$, $J=3$, 
+$\mathbf{R}=\begin{pmatrix}
+1 & -1 & 0 & 0 & 0 \\
+0 & 1 & -1 & 0 & 0 \\
+0 & 0 & -1 & 1 & 0 
+\end{pmatrix}$,
+$\mathbf{q}=\begin{pmatrix}
+0 \\ 
+0 \\
+0
+\end{pmatrix}$, $K=5$
+$$\mathbf{R\beta}=\mathbf{q}$$
+\begin{tcolorbox}We can use an F test to test the joint significance of the parameters.  $$F[J,n-K\vert \mathbf{X}]=\frac{(\mathbf{Rb}-\mathbf{q})'[\mathbf{R}[s^2(\mathbf{X}'\mathbf{X})^{-1}]\mathbf{R}']^-1(\mathbf{R}b-\mathbf{q})}{J}$$ At the beginning we would define the power of the test,$\alpha$, the acceptable level of type I error we are willing to incur. For instance, $\alpha=.05$ means our test would have a 5% chance of incorrectly rejecting the null hypothesis. We use this level of $\alpha$ to determine the critical values for our F statistic with the given degrees of freedom $(J,n-K)$. If the calculated F statistic, $F[J,n-K\vert \mathbf{X}]$, is greater than the found critical value F statistic based on the distribution, $F^{cr}$, then we reject the null hypothesis. Otherwise, we say that we fail to reject the null hypothersis. The largest assumption needed for this test is the basic assumption that a linear model is an acceptable fit for our data.\end{tcolorbox}
+
+##*B. Computational Problems*
+  (1) Using the pp420_data.dta data set, regress earnings on education, age, and age squared.
+```{r 1, echo=FALSE, include=TRUE}
+library(haven)
+require(tidyr)
+pp420_data <- read_dta("~/Downloads/pp420_data.dta")
+  dat <- pp420_data
+  earn <- dat$earn
+  welf <- dat$adcc
+  tot <- dat$tinc
+  educ <- dat$higrade 
+  age <- dat$age
+  agesq <- dat$agesq
+b1 <- lm(earn ~ educ+age+agesq, dat)
+summary(b1)
+```
+\begin{tcolorbox}The resulting regression is $y_i=-1221.0501 + 105.7343\cdot{educ}_i + 32.2463\cdot{age}_i - 0.3569\cdot {age}^2_i + \epsilon_i$, with $age^2_i$ being the only parameter which does not appear to be statistically significant (not equal to zero).\end{tcolorbox}
+  (2) This model assumes that the value of an additional year's schooling is the same, regardless how much education the worker has. An alternative specification assumes that their education has a discrete effect at particular thresholds: having 12 years of schooling vs. having less than 12, and having more than 12 years of schooling vs. having 12. Formulate and estimate such a model (check that your sample size is the same as in (1)). What is the value of having a high school diploma vs. not having one (you get a diploma after the 12th year of school). What is the value of having more than a diploma? Is this number statistically different from zero? Between this model and the model from (1), which provides a better fit to the data? Explain.
+```{r 2, echo=FALSE, include = TRUE}
+Dmhs <- as.numeric(educ > 12)
+Dhs <- as.numeric(educ ==12)
+b2 <- lm(earn ~ age+agesq+Dhs+Dmhs, dat)
+summary(b2)
+```
+\begin{tcolorbox}The resulting regression is $y_i=-243.0428 + 34.2271\cdot{age}_i - 0.4264\cdot {age}^2_i + 361.7839.143\cdot D_{educ_i = HS}+455.8378\cdot D_{educ_i >HS}+\epsilon_i$. So, the marginal benefit of achieving a high school diploma (having 12 years of schooling) appears to be an additional \$361.78 (approximately) in earnings. Then, by having more than 12 years of schooling, it appears to give an individual a lump sum increase in earnings of \$455.84 (approximately), or, an additional increase of approximately \$94.05. Given that both the $R^2$ and the adjusted $R^2$ has increased (accounting for the increase in the number of parameters), it appears that this second model (with included dummy variables) provides a better fit.\end{tcolorbox}
+  (3) A problem with the model from (2) is that it assumes that the value of an additional year's education is zero below the high school graduation threshold. Formulate and estimate a model that allows you to test this implicit assumption. Does it provide a better fit to the data than the model from (2)? What is the value of having 11 years of schooling, versus having only 9 years of schooling? What is the value of having 12 years, versus having only 11?
+```{r 3, echo=FALSE, include = TRUE}
+educ.d = factor(educ)
+b3 <- lm(earn ~ age+agesq+educ.d, dat)
+summary(b3)
+```
+\begin{tcolorbox}The resulting regression is $y_i=-557.692 + 30.8937\cdot{age}_i - 0.3639\cdot {age}^2_i + \bf{D} +\epsilon_i, \newline
+D=\begin{cases}
+186.3736 & if \ \ D_{educ_i = 2} \\
+668.8161 & if \ \ D_{educ_i = 3} \\
+325.7598 & if \ \ D_{educ_i = 4} \\
+-72.8092 & if \ \ D_{educ_i = 5} \\
+159.1466 & if \ \ D_{educ_i = 6} \\
+233.7047 & if \ \ D_{educ_i = 7} \\
+209.2162 & if \ \ D_{educ_i = 8} \\
+339.7216 & if \ \ D_{educ_i = 9} \\
+356.5552 & if \ \ D_{educ_i = 10} \\
+405.5268 & if \ \ D_{educ_i = 11} \\
+716.9039 & if \ \ D_{educ_i = 12} \\
+657.5187 & if \ \ D_{educ_i = 13} \\
+595.1204 & if \ \ D_{educ_i = 14} \\
+605.2988 & if \ \ D_{educ_i = 15} \\
+1074.4699 & if \ \ D_{educ_i = 16} \\
+3182.2514 & if \ \ D_{educ_i = 17} \\
+1304.0633 & if \ \ D_{educ_i = 18}
+\end{cases}$\newline
+Moving from only having 9 years of schooling to 11 years of schooling provides an increase in expected earnings of \$65.81 (approximately), found by differencing the estimates for each year of schooling's dummy variable ($D_{educ_i = 11}-D_{educ_i = 9}$). Similarly, for the move from 11 to 12 years of schooling, going from just short of graduating high school to completing high school, we see an increase in earnings of approximately \$311.38. Once again, we see an increase in that both the $R^2$ and the adjusted $R^2$ (accounting for the increase in the number of parameters), so it appears that this third model provides a better fit.\end{tcolorbox}
+  (4) Now add race/ethnicity dummies to your model from (3). Do they belong in the regression? How do they affect the estimates of the education and age coefficients? What does this say about the correlation between the race/ethnicity dummies and the education and age variables? Can you verify this in the data?
+```{r 4, echo=FALSE, include = TRUE}
+black <- dat$black
+white <- dat$white
+oth <- dat$otheth
+b4 <- lm(earn ~ age+agesq+educ.d+black+white+oth, dat)
+summary(b4)
+covmat <- vcov(b4)
+cormat <- cov2cor(covmat)
+cormat[21:23,2:20]
+```
+  \begin{tcolorbox} By adding race/ethnicity parameters, we saw another increase in fit of the model, but a decrease in the power of our other covariates. We see advanced degrees (college, post graduate) appearing to have a significant effect still, but the significance completely disappears below year 12. This leads me to believe that an argument in favor of including these parameters in the model are valid, but they are likely to be correlated with the education variables (i.e. one race/ethnicity is likely to have higher educational achievement than others). This may explain the shift away from significance, rather than leaving these effects unchanged.When we look at the portion of the correlation matrix that pertains to this question, we see that certain levels of educational attainment are highly correlated with some race indicators more than others (i.e. the second lowest level of educational attainment being highly correlated with "black" rather than "white" or "other", and higher levels of educational attainment being positively correlated with "other" and negatively correlated with "black" and "white").\end{tcolorbox} *Note: the number of missing observations have increased which has lead to a slight decrease in the sample size*
+  (5) Referring again to the model from (2), provide an informal check for the presence of heteroskedasticity. Based on this check, do you think it is important to provide a formal test?
+```{r 5, echo=FALSE, include = TRUE}
+plot1 <- plot(b2[["model"]][["age"]], b2$residuals)
+plot2 <- plot(b2[["model"]][["agesq"]], b2$residuals)
+plot3 <- plot(b2[["model"]][["Dhs"]], b2$residuals)
+plot4 <- plot(b2[["model"]][["Dmhs"]], b2$residuals)
+```
+\begin{tcolorbox}To do an informal check for possible heteroskedasticity I chose to plot the model's residuals against the parameters to see if there are any obvious trends or lack of balance. In the first two plots, the residuals against the age and age squared variables, we see that variation is highest in the middle of the age range, which isn't surprising as that is likely where most of the data is. When the residuals are plotted against the education indicator variables (high school ($Dhs$) or more than high school ($Dmhs$)) we see that higher variation is found with the individuals who only have a high school diploma. While this isn't in itself clear enough of an indication of the existence of heteroskedasticity in the textbook definition of it, these are indicative that it may be worth exploring further.\end{tcolorbox}

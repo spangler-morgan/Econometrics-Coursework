@@ -1,0 +1,100 @@
+---
+title: "3/11/19 Notes"
+author: "Morgan Conklin Spangler"
+date: "3/11/2019"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Binary Response Models
+
+$$y=x\beta+\epsilon, \ \ y\in\{0,1\}$$
+$1=$ success, $0=$ failure
+
+**Linear Probability Model**
+
+  1) ${\bf{E}}(y_i|x_i)=x_i'\beta$\newline $b=(x'x)x'y$ $\Rightarrow \beta$ is unbiased
+  ${\bf{E}}(y)i|x_i)=x_i'\beta=P(y_i=1|x_i)1+P(y_i=0|x_i)0=P(y_i=1|x_i)$\newline $P(y_i=1|x_i)=x_i'\beta=P_i$
+  2) $V(u_i)=P(y_i=1|x_i)(1-x_i'\beta)^2+P(y_i=0|x_i)(-x_i'\beta)^2=x_i'\beta(1-x_i'\beta)=P_i(1-P_i)$
+  
+$\Rightarrow$ OLS implies that the linear probability model is inefficient. So, we have the following choices:
+  a) Estimate by OLS and use the robust covariance matrix
+  b) GLS (equal to weighted least squares with the weights given by $(\sqrt{P_i(1-P_i)})^{-1}$)
+  
+Suppose $P_i=x_i'b=b_0+b_1X_i$, this may lie outside the unit interval which (obviously) probability ($P_i$) cannot so this will have to be corrected for by changing $X_i$ or adding higher order polynomials.
+
+## Index Models and Latent Dependant Variables
+
+$$y_i^*=w_i+w^r_i$$ $i$ works if $w_i\geq w_i^r\Rightarrow y_i=1$ if $i$ works and $0$ otherwise.
+
+$$y_i^*=x_i'\beta+\epsilon_i\Rightarrow P(y_i=1|x_i)=P(y_i^*\geq 0|x_i)=P(\epsilon_i\geq -x_i'\beta$$ But, we could divide the RHS inside the parantheses by a scalar and the ratio ($P$) would remain unchanged. So, we say "$\beta$ is identified up to scale".
+
+## Logit and Probit
+
+$P(y_i=1|x_i)=P(x_i'\beta)$ where $F(\cdot)$ is a cdf.
+
+### Probit
+
+$F(\cdot)=\Phi(\cdot)$, $\Phi$ is the cdf. $P(y_i=1|x_i)=\Phi(x_i'\beta)$ (implicit assumption that the standard deviation is equal to 1)
+
+### Logit
+
+$F(x_i'\beta)=\frac{e^{(x_i'\beta)}}{1+e^{(x_i'\beta)}}$\newline $P(y_i=1|x_i)=\frac{e^{(x_i'\beta)}}{1+e^{(x_i'\beta)}}=\Lambda_i$
+
+## Estimation
+
+(Via maximum likelihood.) Under independent sampling, $L(y_ix_i\beta)=\Pi_{i=1}^nF(x_i'\beta)^{y_i}[1-F(x_i'\beta)]^{1-y_i}\Rightarrow \ln L(y_ix_i\beta)=\sum_{i=1}^n y_i\ln F(x_i'\beta)+(1-y_i)\ln[1-F(x_i'\beta)]=\sum_{i=1}^n\ln L_i$\newline $\ln L_i=y_i\ln F(x_i'\beta)+(1-y_i)\ln[1-F(x_i'\beta)]$
+
+### Probit
+
+$g\equiv$ gradient\newline $g(x,y;\beta)=\frac{\partial \ln L}{\partial \beta}=\sum_{i=1}^n\frac{\partial \ln L_i}{\partial \beta}=\sum_{i=1}^ng_i$, $g_i\equiv\frac{\partial \ln l_i}{\partial \beta}$\newline $g_i=\frac{y_i-\Phi(x_i'\beta)}{\Phi(x_i'\beta)[1-\Phi(x_i'\beta)]}\phi(x_i'\beta)x_i=\lambda_ix_i$, $\lambda_i=\frac{q_i\phi(q_ix_i'\beta)}{\Phi(q_ix_i'\beta)}$\newline $q_i=2y_i=1,\phi(z):$ unit normal pdf
+
+$g(x,y;\beta)=\sum_{i=1}^n\lambda_ix_i\leftarrow$ $k\times 1$ matrix\newline
+$H(x,y;\beta)=\frac{\partial^2\ln L}{\partial \beta \partial \beta}=-\sum_{i=1}^n H_i$, $H_i=\lambda_i(\lambda_i+x_i'\beta)x_ix_i'$
+
+### Logit
+
+$g_i-(y_i-\Lambda_i)x_i\leftarrow\sum_{i=1}^ne_ix_i$\newline $g=\sum_{i=1}^ng_i$\newline this is sometimes referred to as the "residualized error"\newline $H=-\sum_{i=1}^nH_i, \ \ H_i=\Lambda_i(1-\Lambda_i)x_ix_i'$\newline
+
+  * The hessians for both models are negative definite (provided there is no perfect collinearity happening in the regressors)
+  
+## Inference
+
+Under general conditions, $plim(\hat{\beta_{xj})=\beta$ and $\sqrt{n}(\beta_{xj}...$
+
+$\hat{H}=-\sum_{i=1}^n \hat{\lambda_i}(\hat{\lambda_i}+x_i'\hat{\beta}_{xj})x_ix_i'$: probit\newline $\hat{H}=-\sum_{i=1}^n \hat{\Lambda_i}(1-\hat{\Lambda_i})x_ix_i'$: logit\newline 
+
+$\lambda_i=\frac{q_i\phi (q_ix_i'\hat{\beta}_{xj}}{}$ FINISH
+
+### Interpretation
+
+How do we interpret the coefficients? $$P(y_i=1|x_i)=F(x_i'\beta)$$
+
+$\frac{\partial P(y_i=1|x_i)}{\partial x_{ij}}=f(x_i'\beta)\beta_j=\phi (x_i'\beta)(\beta_j)=\Lambda_i(1-\Lambda_i)\beta_j=$"marginal effects"
+
+  * customary to average the effects given they are nonlinear
+  
+$$\frac{\partial P(y_i=1|x_i)}{\partial x_{ij}}\approx \bar{P}(1-\bar{P}\beta_j)$$
+
+## Numerical Methods
+
+We want to maximize the likelihood, i.e., solve $$\max_\beta \ln L=\sum_{i=1}^n \ln L_i$$ At a maximum $$g=\sum_{i=1}^n g_i(x_i,y_i;\beta)=0$$ But there is no closed-form solution for this equation ($g=$).
+
+Ex:\newline $g=\sum_{i=1}^n (y_i-\Lambda_i)x_i$, $\Lambda_i=\exp{(\frac{x_i'\beta}{1+\exp{x_i'\beta}})}$
+
+Q: How to proceed?\newline
+A: Maximizing the likelihood...
+
+Many algorithms for finding the zeros of a function. Newton's algorithm works well for globally concave objection functions (encompasses both logit and probit by the Hessian).
+
+Let $k=1$. (insert graph)
+
+$m=\frac{0-g(\beta^0)}{B'-B^0}$\newline $\beta'=\beta^0-\frac{g(\beta^0)}{m}=\beta^0-\frac{g(\beta^0)}{g(\beta)}$...
+
+Taylor Series (general $k$)\newline $g(\beta)=g(\beta^*)+H)\beta^*)(\beta-\beta^*)=H(\beta^*)(\beta-\beta^*)$ since $g(\beta^*)=0$\newline $\beta^*=\beta-[H(\beta^*)]^{-1}g(\beta)$ this suggests iterations of the form $\beta^l=\beta_{l-1}-H(\beta^{l-1})^{-1}g(\beta^{l-1})$\newline $H(\beta^{l-1})^{-1}g(\beta^{l-1})$ referred to as the direction matrix.\newline (This next thing is software dependent) typically, this will stop when 
+  
+  1) $g(\beta^l)\approx 0$
+  2) $\frac{\beta_j^l-\beta_j^{l-1}}{\beta_j}\approx 0, \ j=1,2,...k$

@@ -1,0 +1,810 @@
+---
+title: "Notes"
+author: "Morgan Conklin Spangler"
+date: "6/10/2019"
+output: pdf_document
+header-includes:
+  - \usepackage{amsmath}
+  - \usepackage{ amssymb }
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{mathtools}
+  - \usepackage{multirow}
+  - \usepackage{setspace}
+  - \usepackage{tcolorbox}
+  - \usepackage{graphicx}
+  - \usepackage{grffile}
+  - \usepackage{tabularx}
+  - \usepackage{dcolumn}
+  - \usepackage{lscape}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Randomized Control Trials (RCT)
+### Causality and selection bias
+
+Causality is fundamental to economic research. Most experiments involve estimating the causal effect of $X$ on $Y$.
+  
+Rubin's causal model:
+
+  - Suppose that
+    - We have $N$ persons, $i=1,...,N$ randomly drawn from a large population
+    - Want to estimate the effect of a binary treatment $D_i$ on $Y_i$
+  - Two potential outcomes for each person: 
+    - $Y_{0,i}=$potential outcome for person $i$ in the untreated state, $D_i=0$
+    - $Y_{1,i}=$potential outcome for person $i$ in the treated state, $D_i=1$
+    - $Y_i=D_iY_{1,i}+(1-D_i)Y_{0,i}$
+  - The causal effect of treatment on outcome $Y$ for person $i$ is defined as $\tau_i=Y_{1,i}-Y_{0,i}$
+
+\textbf{\textit{Holland's Fundamental Problem of Causal Inference}} It is impossible to observe the value of $Y_{1,i}$ and $Y_{0,i}$ on the same $i$, this implies we are never able to estimate $\tau_i$. 
+
+Average Treatment Effect (ATE) $\tau^{ATE}=E[Y_{1,i}-Y_{0,i}]=E[Y_{1,i}]-E[Y_{0,i}]$
+Difference in means: $\tau^D=E[Y_{1,i}|D_i=1]-E[Y_{0,i}|D_i=0]$
+Average Treatment Effect on the Treated (ATET): $\tau^{ATET}=E[Y_{1,i}-Y_{0,i}|D_i=1]$
+
+  - In general, the difference in means is not equal to the ATE due to self-selection into treatment groups. Randomization into treatment group solves this issue.
+  
+  $\tau^D=E[Y_{1,i}|D_i=1]-E[Y_{0,i}|D_i=0]$\newline $=E[Y_{1,i}|D_i=1]-E[Y_{0,i}|D_i=0]+E[Y_{0,i}|D_i=1]-E[Y_{0,i}|D_i=1]$\newline $E[Y_{1,i}-Y_{0,i}|D_i=1]+E[Y_{0,i}|D_i=1]-E[Y_{0,i}|D_i=0]$\newline $=\tau^{ATET}+$(selection bias)
+  
+### Why does randomization solve selection bias?
+  
+Random assignment means the conditional treatment of $Y_0$ and $Y_1$ given the treatment assignment is equal to the unconditional distribution. $$F(Y_{0,i}|D_i=1)=F(Y_{0,i}|D_i=0)=F(Y_{0,i})$$ $$F(Y_{1,i}|D_i=1)=F(Y_{1,i}|D_i=0)=F(Y_{1,i})$$ This implies that $$E[Y_{0,i}|D_i=1]=E[Y_{0,i}|D_i=0]=E[Y_{0,i}]$$ $$E[Y_{1,i}|D_i=1]=E[Y_{1,i}|D_i=0]=E[Y_{1,i}]$$
+
+  - With random assignment the selection bias is equal to 0, so $E[Y_{1,i}-Y_{0,i}|D_i=1]=E[Y_{1,i}|D_i=1]-E[Y_{0,i}|D_i=0]=E[Y_{1,i}-Y_{0,i}]$ and we have $\tau^{ATET}=\tau^D=\tau^{ATE}$
+  
+### Stable Unit Value Treatment Assumption (SUTVA)
+
+Let $\bf{D}$ be an $N\times 1$ column vector that contains the treatment values for all $i=1,...,N$ units\newline
+$\bf{D}=(D_1,...,D_N)$, in which $D_i=\{0,1\}$ SUTVA states that if $D_i=D_i'$ then $Y_i(\bf{D})=Y_i(\bf{D'})$\newline
+In other words, as long as person $i$'s treatment assignment is the same between two regimes $\bf{D}$ and $\bf{D}'$, person $i$'s outcome is the same.
+
+$\Rightarrow$ Person $i$'s potential outcomes are unaffected by whether another person $j, j\neq i$, gets treated or not (i.e. no spillover effects).
+
+### Balance in observables
+
+Similar to the conditional distribution of potential outcomes, randomization makes the conditional distribution for any $X_i$ unaffected by the treatment equal to the unconditional distribution of that covariate.
+$$F(X_i|D_i=1)=F(X_i|D_i=0)=F(X_i)$$ $$E[X_i|D_i=1]=E[X_i|D_i=0]=E[X_i]$$
+
+  - Deaton & Cartwright (2018) argue that reporting balance tables on covariates doesn't make sense and randomization ensures the groups are balanced in expectation by construction.
+  - Other researchers believe reporting balance tables is still informative to ensure randomization was properly done and that the two groups are relatively well balanced
+  - Both sides agree that stratified randomization is important to ensure that the two groups are well balanced on the important covariates
+  
+### Incomplete compliance (ITT and LATE)
+
+  - If the observations in the treated group that did not receive treatment (or the untreated group that did receive treatment) were just dropped we would lose the randomization aspect of our study. Thus, we do not want to drop these observations to ensure the groups were still constructed randomly.
+  
+Define initial group assignment $Z_i=\{0,1\}$, if we run the regular OLS $$Y_i=\alpha_0+\alpha_1Z_i+e_i$$ then we get the intent to treat (ITT) effect
+$$\tau^{ITT}=\hat\alpha_1$$
+
+We can also estimate the local average treatment effect (LATE) by using the treatment assignment as an instrument for the treatment status.
+
+$$D_i=\alpha_0+\alpha_1Z_i+e_i$$ $$Y_i=\beta_0+\beta_1\hat D_i+\epsilon_i$$
+
+The LATE is interpreted as the ATE for the compliers. $$\beta_1^{IV}=\frac{E[Y_i|Z_i=1]-E[Y_i|Z_i=0]}{E[D_i|Z_i=1]-E[D_i|Z_i=0]}=E[Y_{1,i}-Y_{0,i}|(D_i|Z_i=1)-(D_i|Z_i=0)=1]=\tau^{LATE}$$
+
+We have four types of individuals
+
+|            | $D_i|Z_i=0$ | $D_i|Z_i=1$ | Proportion of type|
+|------------|-------------|-------------|-------------------|
+|Always-Taker|        1    |    1        |       $\pi_A$     |
+|Never-Taker |        0    |     0       |        $\pi_N$    |
+|Complier    |        1    |     0       |      $\pi_C$      |
+|Defier      |        0    |     1       |       $\pi_D$     |
+
+We make two assumptions
+
+  - Monotonicity
+      - Either $(D_i|Z_i=1)>(D_i|Z_i=0)$ for all $i$ or $(D_i|Z_i=1)\leq (D_i|Z_i=0)$ for all $i$; either being placed in the treatment groups makes individuals more likely to take up treatment or less likely, the direction must be weakly the same across all $i$.
+  - Independence
+      - $(Y_{0,i},Y_{1,i},(D_i|Z_i=1),(D_i|Z_i=0) \perp\!\!\!\perp \bf{Z}$; the potential outcomes are independent of the instrument.
+      - Note: this assumption is not guaranteed by random assignment of $Z_i$ (not guaranteed by use of RCT)
+      
+By assumming monotonicity is satisfied we are assumming away the defier (or no complier, but we stick to no defier throughout without loss of generality).
+
+The independence assumption is made up of random assignment and the **exclusion restriction**. 
+
+  - Exclusion restriction: $Z$ does not affect $Y$ by any other mechanism except it's affect on $D$. $$Y_{0,i}(Z_i=0)=Y_{0,i}(Z_i=1)$$ $$Y_{1,i}(Z_i=0)=Y_{1,i}(Z_i=1)$$
+  
+**Proof of the LATE Theorem**
+Monotonicity assumption provides that there is no defier. Then, we can decompose $E[Y_i|Z_i=1]$ by $$E[Y_i|Z_i=1]=\pi_C\cdot E[Y_i|Z_i=1,D_i=1, Complier] + \pi_A\cdot E[Y_i|Z_i=1,D_i=1, Always \ Taker] + \pi_N\cdot E[Y_i|Z_i,D_i=1,Never \ Taker].$$
+Then, the independence assumptions allows us to interpret this as, $E[Y_i|Z_i=1]=\pi_C \cdot E[Y_{1,i}| C] + \pi_A\cdot E[Y_{1,i}|AT] + \pi_N\cdot E[Y_{0,i}|NT].$\newline
+By the same logic, we write $E[Y_i|Z_i=0]$ as $$E[Y_i|Z_i=0]=\pi_C\cdot E[Y_{0,i}|C] + \pi_A\cdot E[Y_{1,i}|AT] + \pi_N\cdot E[Y_{0,i}|NT].$$
+And by taking the difference we have \newline $E[Y_i|Z_i=1]-E[Y_i|Z_i=0]=\pi_C\cdot E[Y_{1,i}|C] + \pi_A\cdot E[Y_{1,i}|AT] + \pi_N\cdot E[Y_{0,i}|NT]-\pi_C\cdot E[Y_{0,i}|C] - \pi_A\cdot E[Y_{1,i}|AT] - \pi_N\cdot E[Y_{0,i}|{NT}]$ \newline $=\pi_C\cdot E[Y_{1,i}|C] -\pi_C\cdot E[Y_{0,i}|C]$ \newline $=\pi_C\cdot E[Y_{1,i}-Y_{0,i}|C]$ \newline Then, we can show that $E[D_i|Z_i=1]=1\cdot(\pi_A+\pi_C)+0\cdot\pi_N=\pi_A+\pi_C$ and $E[D_i|Z_i=0]=1\cdot(\pi_A)+0\cdot(\pi_N+\pi_C)=\pi_A$ $$\Rightarrow \pi_C=E[D_i|Z_i=1]-E[D_i|Z_i=0]$$ So, we have that $E[Y_i|Z_i=1]-E[Y_i|Z_i=0]=\pi_C\cdot E[Y_{1,i}-Y_{0,i}|C]=(E[D_i|Z_i=1]-E[D_i|Z_i=0])\cdot E[Y_{1,i}-Y_{0,i}|C]$ $$\Rightarrow \frac{E[Y_i|Z_i=1]-E[Y_i|Z_i=0]}{E[D_i|Z_i=1]-E[D_i|Z_i=0]}=E[Y_{1,i}-Y_{0,i}|C]=\tau^{LATE}=\hat\beta_1$$
+
+*Special case: one sided noncompliance*\newline
+Suppose only the treatment group has incomplete compliance. Then, we have perfect compliance in the control group, $(D_i|Z_i=0)=0$. $$\beta^{IV}=\frac{E[Y_i|Z_i=1]-E[Y_i|Z_i=0]}{E[D_i|Z_i=1]-E[D_i|Z_i=0]}=E[Y_{1,i}-Y_{0,i}|(D_i|Z_i=1)-(D_i|Z_i=0)=1]=E[Y_{1,i}-Y_{0,i}|(D_i|Z_i=1)=1]=\tau^{ATET}$$
+
+### Power calculation
+
+Assume you have an RCT with treatment $D_i=\{0,1\}$ and sample size $N$. A proportion $P$ of the sample is treated. Assume $\epsilon_i$ is i.i.d. with variance $\sigma^2$. Then, the variance of the OLS estimate of $\beta_1$ is $$\frac{1}{P(1-P)}\frac{\sigma^2}{N}$$ and the standard error of the OLS estimator $\hat\beta_1$ is $$SE=\sqrt{\frac{1}{P(1-P)}\frac{\sigma^2}{N}}$$ We know we will test if we reject or fail to reject the null with a significance test $t_\alpha$ and power $t_k$.\newline $Pr(Type \ 1 \ error)=Pr(reject \ H_0 \ when \ true)$. For a given signficance level $t_\alpha$, $H_0$ is rejected when $\hat\beta_1$ falls to the right of the critical value. The power of the test ($k$) for a true effect of size $\beta$ is the fraction of the area under the true curve of the distribution ($f(\beta)$)t that falls to the right of the critical value, $t_\alpha$.\newline The minimum detectable effect size $$MDE=(t_{1-k}+t_\alpha)\cdot\sqrt{\frac{1}{P(1-P)}\frac{\sigma^2}{N}}$$ which can also define the minimum sample size $N$ for a given MDE $$N=(\frac{t_{1-k}+t_\alpha}{MDE})^2\cdot \frac{\sigma^2}{P(1-P)}.$$
+Using this to obtain a minimum $N$ requires that beforehand you have decided on,
+
+  - targets for $t_{1-k},t_\alpha$
+  - $P$, (e.g. $P=0.5$)
+  - estimates of $\sigma^2$
+  - estimates of MDE
+  
+### Practical issues when designing an RCT
+
+Alternatives to general randomization:
+
+  - Randomized order of phase-in
+      - If it is not acceptable for some groups to receive no support, randomizing the order of phase-in can allow evaluations of program effects even with no true control groups.
+  - Encouragement design
+      - When it is not possible to randomize treatment, one can randomized encouragement to take up the program ($Z$) which can be used to estimate the LATE
+  - Level of randomization
+      - It may be possible, and more practical, to aggregate the level of randomization to the school/county/etc. rather than the individual level (mitigate spillover effects)
+      - Allows us to estimate impacts at the individual level clustered within groups or average outcomes at the group level and weight by the number of observations within each group.
+  - Randomized stratification
+      - Carry out the randomization within groups sharing the same (or similar) values of certain observable characteristics
+      - Ensures we have balance on stratified variables
+      
+External validity concerns
+
+  - RCT is usually the most convincing method to estimate a true ATE. However, it only measures a causal effect for a certain group in a certain setting and may not be generalizable. 
+  
+## Regression Discontinuity Design
+
+### Sharp RD
+
+With Rubin's model, $$Y_i=D_i\cdot Y_{1,i}+(1-D_i)\cdot Y_{0,i}$$ a sharp RD requires that $D_i=1(X_i\geq c)$
+
+  - Everyone with $X_i\geq c$ gets treated $X_i< c$ is untreated
+  - $X_i$ is called the running variable
+  - $c$ is some cutoff value
+  - Analogous to perfect compliance in the randomized experiment
+  
+$$\lim_{x\downarrow c} E[Y_i|X_i=x]-\lim_{x\uparrow c} E[Y_i|X_i=x]=\lim_{x\downarrow c} E[Y_{1,i}|X_i=x]-\lim_{x\uparrow c} E[Y_{0,i}|X_i=x]$$ $$=E[Y_{1,i}|X_i=c]-E[Y_{0,i}|X_i=c]$$ $$=E[Y_{1,i}-Y_{0,i}|X_i=c]$$ $$=\tau^{SRD}$$ $\tau^{SRD}$ is interpreted as the average causal effect of the treatment at the discontinuity.
+
+*Necessary Assumption*: Continuity of Conditional Regression Function
+
+  - $E[Y_{0,i}|X_i=x]$ and $E[Y_{1,i}|X_i=x] are continuous in $x$
+      - Technically only need continuity at $x=c$, but empirically it is generally true that continuity is over all $x$ if it's true at $c$
+      - This assumption allows us to use $lim_{x\uparrow c} E[Y_{0,i}|X_i=x]=E[Y_{0,i}|X_i=c]$ and $lim_{x\downarrow c} E[Y_{1,i}|X_i=x]=E[Y_{1,i}|X_i=c]$
+  
+### Fuzzy RD
+
+With Rubin's model, $$Y_i=D_i\cdot Y_{1,i}+(1-D_i)\cdot Y_{0,i}$$ a fuzzy RD relaxes the discontinuity requirement ($D_i=1(X_i\geq c)$) to just have the probability of being treated have a discontinuous jump at the cutoff $$\lim_{x\downarrow c} \Pr(D_i=1|X=x)\neq \lim_{x\uparrow c}\Pr(D=1|X=x)$$
+
+  - Treatment $D$ is not a deterministic function of $X$, just a change in the probability of treatment.
+  - Analogous to imperfect compliance in a randomized experiment
+  
+$$\frac{\lim_{x\downarrow c} E[Y_i|X_i=x]-\lim_{x\uparrow c} E[Y_i|X_i=x]}{\lim_{x\downarrow c} E[D_i|X_i=x]-\lim_{x\uparrow c} E[D_i|X_i=x]}=E[Y_{1,i}-Y_{0,i}|X_i=c, i \ is \ complier]$$ $$=\tau^{FRD}$$ $\tau^{FRD}$ is interpreted as the average causal effect of the treatment at the discontinuity on the compliers.
+  
+  - Compliers are those with $(D_i=1|Z_i=1)$ and $(D_i=0|Z_i=0)$
+  - Fuzzy RD is essentially an IV estimation with $Z_i=1(X_i\geq c$
+
+### External Validity
+
+If you can argue that treatment effects are fully homogenous (not usually a fair argument), then external validity in an RD design can be argued. However, in general RD designs have limited external validity.
+
+### Graphical Analysis
+
+Graphical analysis is the focus of any RD paper. Graphs that should always be provided in an RD paper are
+
+  - Outcome variable ($E[Y_i|X_i=x]$) over running variable $X_i$
+      - Assess visually if there is a discontinuity in outcome
+  - Treatment variable ($E[D_i|X_i=x]$) over running variable $X_i$
+      - Assess visually if there is a discontinuity in probability of treatment
+  - Covariates ($E[V_i|X_i=x]$) over running variable $X_i$
+      - Assess visually if there is no discontinuity in covariates
+  - Density of running variable $f(x_i)$ to check manipulation of $X_i$
+      - Assess visually if the density of the running variable ($f(x_i)$) is smooth (no bunching)
+
+### Estimation
+
+  - Local linear regression
+      - SRD
+          - Use a bandwidth $h$, $c-h<X_i<c+h$
+          $$Y_i=\alpha+\tau D_i+\beta X_i+\gamma X_i\cdot D_i+u_i$$
+          - $\beta$ estimates the slope of the trend
+          - $\gamma$ allows the slope of the trend to be different for the treatment group
+          - $\tau$ is the SRD estimate which estimates the jump by controlling for the trend
+      - FRD
+          - $Z_i=1(X_i\leq c)$
+          $$Y_i=\pi_0+\pi_1 Z_i+\pi_2 X_i+\pi_3 X_i\cdot Z_i+u_i$$
+          $$D_i=\gamma_0+\gamma_1 Z_i+\gamma_2 X_i+\gamma_3 X_i\cdot Z_i+v_i$$
+          - $\pi_1$ estimates the jump in $Y_i$ by controlling for the trend
+          - $\gamma_1$ estimates the jump in $D_i$ by controlling for the trend
+          - $\tau^{FRD}=\frac{\pi_1}{\gamma_1}$
+          - Can be estimated with two seperate equations or with one 2SLS using $Z_i$ as an instrument for $D_i$
+          $$Y_i=\phi_0+\phi_1 D_i+\phi_2 X_i+\phi_3 X_i\cdot D_i+u_i$$
+  - Higher-order control function
+      - Alternative to local linear regression
+      - Not recommended by Imbens
+      - Uses all the data, including those observations far from the cutoff
+      $$Y_i=\alpha+\tau D_i+m(X_i)+m(X_i)\cdot D_i$$
+  - Adding covariates to any estimation should be easy and have little impact on the estimates if the trend functions are successfully estimated, but can help improve precision and reduce the standard errors
+      - Covariates' role in RD is similar to their role in IV specifications or experiments
+  - Some papers use an optimal bandwidth for FRD by minimizing the mean squared error (MSE), but the sensitivity of your analysis in a FRD should always be tested with many different values of $h$.
+      - Cross-validation for choosing optimal $h$ (minimizes MSE): $CV(h)=\frac{1}{N}\sum_{i\in q_{x,\delta,l}\leq x_i\leq q_{x,1-\delta,r}}(Y_i-\hat\mu(x_i))^2$
+          - $Y_i$ is the outcome variable from the actual data
+          - $\hat{\mu}(x_i)$ is the predicted $\hat{Y}_i$ from the model
+          - $q_{x,\delta,l}$ is $\delta$ quantile of distribution of samples with $x_i<c$
+          - $q_{x,\delta,r}$ is $\delta$ quantile of distribution of samples with $x_i\geq c$
+          - Usually $\delta=0.5$ is chosen and robustness to other values of $\delta$ are tested
+          - Run local linear regression for each side of $c$ by pretending that the cutoff is at $x_i$ rather than $c$ to generate values of $\hat\mu(x_i)$
+              - For each point $x_i$ that is to the left of $c$ but right of $q_{x,\delta,l}$ model $Y_k=\alpha_{l,x_i}+\beta_{l,x_i}(x_k-x_i)+u_k$, for $x_i-h<x_k<x_i$, then get $\hat\mu(x_i)=\hat\alpha_{l,x_i}$ for each point $x_i$ to the left of $c$
+              - For each point $x_i$ that is to the right of $c$ but left of $q_{x,\delta,r}$ model $Y_k=\alpha_{r,x_i}+\beta_{r,x_i}(x_k-x_i)+u_k$, for $x_i-h<x_k<x_i$, then get $\hat\mu(x_i)=\hat\alpha_{r,x_i}$ for each point $x_i$ to the right of $c$
+
+## Instrumental Variables
+### Traditional IV
+
+$$Y_i=\alpha+\beta D_i+u_i$$ 
+
+  - If $Cov(D,u)\neq 0$, $\hat\beta^{OLS}$ is biased and inconsistent. But we can still estimate $\hat\beta^{IV}$ if $Z$ satisfies
+      - $Cov(Z,D)\neq 0$ (strong first stage)
+      - $Cov(Z,u)= 0$ ($Z$ is fully exogenous)
+
+### Modern IV
+
+  - Modern view of IV allows for heterogeneity in $\beta$ (different persons may have different values of $\beta_i$)
+  - With this view, $\hat\beta^{IV}$ captures the $\beta$ for people whose treatment status ($D$) is affected by the instrument ($Z$), the compliers, so $\beta^{IV}=\tau^{LATE}$
+  - For multiple valid instruments, $plim(\hat\beta^{IV_1})$ may not necessarily be equal to $plim(\hat\beta^{IV_2})$.
+  
+### Weak IV
+
+  - A weak IV problem occurs when a instrument has a weak first stage and/or many instruments are used for one endogenous variable.
+  - With a weak instrument, inconsistency of $\beta^{IV}$ is amplified
+  
+  $$\hat\beta^{IV}=(z'x)^{-1}z'y \\ =(z'x)^{-1}z'(x\beta+u) \\ =\beta+(z'x)^{-1}z'u \\ =\beta+\frac{Cov(z,u)}{Cov(z,x)} \\ =\beta+\frac{\sigma_u}{\sigma_x}\cdot \frac{Corr(z,u)}{Corr(z,x)}$$
+
+If $Z$ is not fully exogenous ($Cov(z,u)\neq 0) \rightarrow plim \beta_{IV}\neq \beta \Rightarrow Corr(z,x)\rightarrow 0$ amplifies inconsistency.
+
+  - Given $E[\hat\beta^{OLS}]=\beta$ and $plim \hat\beta^{OLS}=\beta$, OLS is unbiased and consistent.
+  - Generally, $E[\hat\beta^{IV}]\neq\beta$ but $plim \hat\beta^{IV}=\beta$, so IV estimators are usually biased but consistent.
+      - IV estimator is close to the true estimator when the sample size is large (asymptotic properties - large sample size - are satisfied).
+      
+      $$\hat\beta^{IV}=(Z'X)^{-1}Z'y=(Z'X)^{-1}Z'(X\beta+u)=\beta+(Z'X)^{-1}Z'u=\beta+(N^{-1}Z'X)^{-1}N^{-1}Z'u$$
+      
+  - IV estimator is consistent if $plim N^{-1}Z'X\neq 0$ and $plim N^{-1}Z'u=0$
+  
+  $$E[\hat\beta^{IV}]=\beta+E_{Z,X,u}[(Z'X)^{-1}Z'u]=\beta+E_{Z,X}[(Z'X)^{-1}Z'E[u|Z,X]]$$ 
+  
+  - If $X$ is endogenous, $E[u|Z,X]\neq 0$, otherwise IV wouldn't be necessary in the first place. Thus, it is generally not possible to show $E[\hat\beta^{IV}]=\beta$.
+      - If $Cov(X,u)=0$ and $E[u|Z,X]=0$, this implies that $E[u|X]=0$, so $\hat\beta^{OLS}=\hat\beta^{IV}=\beta$ when $\hat\beta^{IV}$ is unbiased.
+
+### Just-Identified IV
+
+  - $E[\hat\beta^{IV}]$ does not exist
+  
+2nd stage: $y=x\beta+\sigma_uu$\newline
+1st stage: $x=w\pi+\sigma_vv$\newline
+Assume $x$ and $y$ are normally distributed $$\Rightarrow E[\beta^{IV}-\beta]=\frac{\rho \sigma_u}{\sigma_v}\frac{w'w}{a+w'w}$$
+
+Special case: $\rho=0$ when $x$ is fully exogenous\newline
+The expected value of $\frac{w'w}{a+w'w}$ can be defined, but in general it won't exist as the integral will diverge near $x=-a$. $$E[\frac{w'w}{a+w'w}]=\int_{-\infty}^\infty \frac{x}{a+x}\phi(x)dx$$
+  
+### Over-Identified IV
+
+  - $E[\hat\beta^{IV}]$ exists but is biased, but the bias is in the direction of OLS
+  
+2nd stage: $y=x\beta+u$ (where $x$ is a single variable)\newline
+1st stage: $x=z\pi+v$ (where $z$ is a set of $K$ instruments, $K>1$)\newline
+Concentration parameter $\tau^2$ $$\tau^2=\pi'ZZ'\pi\frac{1}{\sigma^2_v}$$
+
+  - Bias of IV is increasing in $\tau^2$
+  - $\frac{\tau^2}{K}$ is the population analogue of F-statistic for $H_0:\pi=0$
+      - So we use the 1st stage F-statistic to test for finite-sample bias
+          - Staiger & Stock (1997) show that the maximal bias in IV is no more than 10% of OLS with $F>10$, 20% with $F>5$^[For not clustered standard errors. Can use Kleibergen-Paap statistic to adjust for clustered standard errors.].
+
+### Checklist for IV Estimation
+
+  - Is the random assignment (of the instrument) assumption valid?
+  - Is the exclusion restriction valid?
+  - Does the instrument have a strong enough first stage?
+  - Is the monotonicity assumption valid?
+  - Is the stable unit treatment value assumption (SUTVA) valid?
+  - Does the estimation have weak IV problems?
+          
+## Selection on Observables
+ 
+  - RCT, RD, IV, DID, and Fixed Effects estimation methods are all selection on unobservables designs
+  - With a selection on observables design, it is assumed that the treatment assignment, $D_i$, is random given observables $X_i$. Thus, when controlling for $X_i$ we can obtain a causal treatment effect.
+  
+### Assumptions
+
+  - Conditional Independence Assumption (CIA)
+  
+$$(Y_1,Y_0)\perp\!\!\!\perp D|X$$
+
+  - Functional form of E[D_i|X_i]$ is known/can be approximated
+  
+ $$E[D_i|X_i]=h(X_i)$$
+ 
+  - Then, $\beta$ provides an unbiased estimate for an effect of $D_i$ $$Y_i=\alpha+\beta D_i+\gamma h(X_i)+u_i$$
+  
+### LaLonde's Critique
+
+  - Use the causal estimate from a RCT as a benchmark
+  - Pretend that we did not have an RCT
+  - Find a control group outside of the RCT
+  - Evaluate the impact of the program using alternative, non-experimental methods (i.e. regression adjustment approaches)
+  - Compare the non-experimental estimates to the RCT
+  - These two methods should produce equal estimated effects if the non-experimental methods work as claimed
+  
+Example: National Supported Work (NSW) Demonstration
+
+  - Non-experiemental estimates produced very different results, so the two main explanations for the poor performance of the DID are
+      - Selection on unobservables were not properly dealt with
+          - Corrected for by using selection on unobservables designs (DID, RCT, IV, RD, FE)
+      - Functional form misspecified ($E[D_i|X_i]=h(X_i)$)
+          - Matching helps us deal with this
+
+## Matching
+
+Suppose $(Y_1,Y_0)\perp\!\!\!\perp D|X$. Then, $\tau(x)=E[Y_{1,i}-Y_{0,i}|X_i=x]$ because the treatment is effectively randomly assigned after controlling for $X_i$. People in the treated and control groups are matched on their observables and then their outcomes are compared.
+    
+  - In order to say that this produces a true treatment impact, we need to argue that there is no selection on unobservables happening.
+  
+### Assumptions
+
+  - Conditional Independence Assumption (CIA)
+  
+$$(Y_1,Y_0)\perp\!\!\!\perp D|X$$
+Requires that $D$ be statistically independent of $(Y_1,Y_0)$ once you have conditioned on $X$. 
+
+  - In an RCT we have unconditional independence between the outcomes and treatment status, $(Y_1,Y_0)\perp\!\!\!\perp D$
+  - Since we do not observe the unoberservables, the CIA is untestable.
+
+  - Common Support Assumption (testable)
+  
+$$0<\Pr(D=1|X=x)\equiv p(x)<1 \ \ \forall \ x$$ This condition states that there must be observations with $D=1$ and $D=0$ at each point in $X$. This is necessary in order to match people based on observed characteristics.
+
+  - If this is not met over all $X$ then the impact of treatment can only be identified over the region of common support.
+  
+### Cell estimator
+
+The simplest matching estimator, but can only be used with discrete data.
+  
+  - Divide the data into multiple cells defined by the covariates.
+  - For each value of $X=x$ (for each cell) calculate the mean outcomes of treated and untreated observations
+  - Calculate the difference in means for each cell
+  - Take a weighted average of the differences
+  
+  $$\hat\Delta=\sum_{j=1}^{\# \ \ of \ \ cells} w_j\hat\Delta_j$$ $$\hat\Delta^{ATE}=\frac{\sum_{j=1}^N(\# \ \ of \ \ obs \ \ in \ \ cell \ \ j)\cdot \hat\Delta_j}{N}$$
+### Matching with Continuous Data
+
+  - Matching with bandwidth $h$
+  - Matching to the nearest neighbor $k$
+  - Stratification/classification
+  
+### Propensity score matching
+
+With exact matching, you are limiting the dimensionality you are able to match on. Propensity score matching can be used to get around this issue.
+
+If $(Y_1,Y_0)\perp\!\!\!\perp D|X$, then $(Y_1,Y_0)\perp\!\!\!\perp D|p(x)$ where $p(x)=\Pr(D=1|X=x)$ is the propensity score. This measures the probability of being in the treatment group given a specific $x$.
+
+Proof:\newline
+  1) Show that $\Pr(D_i=1|Y_{0,i},Y_{1,i},p(X_i))=E[D_i|Y_{0,i},Y_{1,i},p(X_i)]\\ =E[E[D_i|Y_{0,i},Y_{1,i},p(X_i),X_i]|Y_{0,i},Y_{1,i},p(X_i)]\\ =E[E[D_i|Y_{0,i},Y_{1,i},X_i]|Y_{0,i},Y_{1,i},p(X_i)]\\ =E[E[D_i|X_i]|Y_{0,i},Y_{1,i},Y_{1,i},p(X_i)]\\ =E[p(X_i)|Y_{0,i},Y_{1,i},p(X_i)]=p(X_i)$
+  2) Now we show that $\Pr(D_i=1|p(X_i))=p(X_i)$\newline $P(D_i=1|p(X_i))=E[D_i|p(X_i)]\\ =E[E[D_i|p(X_i),X_i]|p(X_i)]\\ =E[E[D_i|X_i]|p(X_i)]\\ =E[p(X_i)|p(X_i)]=p(X_i)$ $$\Rightarrow \Pr(D_i=1|Y_{0,i},Y_{1,i},p(X_i))=\Pr(D_i=1|p(X_i))$$ Therefore, this implies the independence of $D_i$ and $(Y_{0,i},Y_{1,i})$ after conditioning on $p(X_i)$.
+  
+In words:\newline Once you condition on the propensity score, $p(x)$, $D$ is independent of $(Y_{0},Y_{1})$. This means that instead of having to match on all the covariates in $X$ in order to deal with selection on observables, we can achieve the same thing by matching on a single variable, the propensity score. $p(x)$ is the true propensity svore. In practice, this needs to be estimated. If we estimate $p(X)$ incorrectly, the estimates will still be biased.
+
+$p(x)$ can be estimated using parametric methods (linear probability model, logit, probit) or non-parametric methods (cell estimators).
+
+With a binary dependant variable:\newline $p(x)=\Pr(D=1|X=x)$ can be estimated in a regression framework with treatment status, $D$, as a binary dependant variable, because $$E[D|X]=\Pr(D=1|X)\cdot 1 + \Pr(D=0|X)\cdot 0=\Pr(D=1|X)$$ $\Rightarrow$ the conditional expectation of a binary variable is equivalent to the conditional probability that this variable is equal to 1.
+
+Estimating the propensity score:
+
+  - Linear probability model $$\Pr(D=1|X)=X\beta$$
+    - Can be estimated with OLS ($D_i=X_i\beta+\epsilon_i$)
+    - Coefficients on $\beta$ represent the marginal effect of $X$ on the probability of treatment
+    - Drawback: sometimes the estimated probabilities fall outside the unit interval and then they must be corrected for (can correct with logit/probit)
+  - Logit and probit functions are non-linear functions which allow the predicted probability to be bounded within the unit interval.
+      - Probit: $\Pr(D=1|X)=\Phi(X\beta)$
+      - Logit: $\Pr(D=1|X)=\frac{e^{X\beta}}{1+e^{X\beta}}$
+  - Nonparametric cell estimators
+      - Count the number of treated observations and the number of total observations for each value of $X$, then for each $X=x$ estimate the $p(x)$ by $$p(x)=\frac{n_{x,D=1}}{n_x}$$
+      
+Using the propensity score:
+
+  - Including the propensity score as a covariate $$Y_i=\alpha+\tau D_i+\beta p(X_i)+u_i$$
+      - no particular reason why this is preferred to a regression controlling for the covariates directly
+      - not recommended for this reason
+  - Blocking on the propensity score
+      - make $K$ blocks based on $p(x)$ with fixed width
+      - within each block $k$, compute the treatment effect $\hat\tau_k$
+      - the matching estimator is computed $$\hat\tau_b^M=\sum_{k=1}^K \hat\tau_k\cdot \frac{N_{1k}+N_{0k}}{N}$$ where $N$ is the number in the sample, $N_{1k}$ is the number of the treated sample in group $k$, $N_{0k}$ is the number of the control sample in group $k$
+      - can run either of $$Y_{ik}=\alpha+\tau_kD_{ik}+u_{ik}$$ $$Y_{ik}=\alpha+\tau_kD_{ik}+X_i\beta+u_{ik}$$ to obtain $\hat\tau_k$
+      - then calculate $$\hat\tau_b^M=\sum_{k=1}^K \hat\tau_k\cdot \frac{N_{1k}+N_{0k}}{N}$$
+  - Weighting with the propensity score
+      - Hirano, Imbens, and Ridder (2003) advocate weighting by the inverse of the propensity score
+      - By first taking the naive estimator, $$\hat\tau^N=\bar y_T \bar y_C=\frac{\sum D_i Y_i}{\sum D_i}-\frac{\sum (1-D_i)Y_i}{\sum (1-D_i)}$$ you realize this will be biased because of self-selection
+      - Then, give $\frac{1}{p(x)}$ weight for the treatment group and it can be proven that $$E[\frac{D_i Y_i}{p(X_i)}]=E[Y_{1,i}]$$
+      - Similarly, give $\frac{1}{1-p(x)}$ weight for the control group and it can be proven that $$E[\frac{(1-D_i) Y_i}{1-p(X_i)}]=E[Y_{0,i}]$$
+      - Then, the ATE can be calculated simply $$ATE\equiv E[Y_{1,i}]-E[Y_{0,i}]=E[\frac{D-iY_i}{p(X_i)}]-E[\frac{(1-D_i)Y_i}{1-p(X_i)}]$$
+      - Which is analogous to $$\hat\tau^M_w=\frac{1}{N}\sum_{i=1}^N (\frac{D_iY_i}{p(X_i)}-\frac{(1-D_i)Y_i}{1-p(X_i)})=\frac{1}{N}(\sum_{i=1}^{N_T}\frac{Y_i}{p(X_i)}-\sum_{i=1}^{N_C}\frac{Y_i}{1-p(X_i)})$$
+      - In a regression framework, either of $$Y_i=\alpha+\tau D_i+u_i$$ $$Y_i=\alpha+\tau D-i+X_i\beta+u_i$$ can be run as a weighted OLS with weight by $$w_i=\sqrt{\frac{D_i}{p(X_i)}+\frac{(1-D_i)}{1-p(X_i)}}=\sqrt{\frac{1}{p(X_i)}}$$ for treatment $i$ and $$w_i=\sqrt{\frac{D_i}{p(X_i)}+\frac{(1-D_i)}{1-p(X_i)}}=\sqrt{\frac{1}{1-p(X_i)}}$$ for control $i$
+      
+  - Propensity score matching allows us to match on just $p(x)$ rather than the full set of covariates
+  - In the case of discrete variables, we can estimate $p(x)$ completely nonparametrically. For other cases, we must be flexible about the functional forms when estimating the propensity score.
+  
+## Difference Estimators
+
+With panel data, we often observe the same people before and after they enter a program. It is possible to measure the change in the outcome variable over time (the difference estimator).\newline $\tau^D=E[Y_{1,t_1}-Y_{0,t_0}|D=1]+E[Y_{0,t_1}-Y_{0,t_0}|D=1]=\Delta^{ATET}+$counterfactual trend of treatment group
+
+  - $Y_{1,t_1}$: the potential treatment status in time $t_1$
+  - $Y_{0,t_0}$: the potential treatment status in time $t_0$
+  - $D=1$ implies the treatment group
+
+$\Rightarrow$ if the outcome of interest would remain unchanged in the absence of treatment, then the difference estimator provides the ATET (average treatment effect on the treated).
+
+  - Identifying assumption: the counterfactual trend of the treatment group (second term) is zero
+    - Cannot be tested
+
+## Difference in Differences
+
+  - Difference in differences (DID) improves on the basic difference estimator by controlling for the underlying trend
+  
+  $$\tau^{DID}=E[Y_{1,t_1}-Y_{0,t_0}|D=1]-E[Y_{0,t_1}-Y_{0,t_0}|D=0]$$ where $D=1$ implies the treatment group and $D=0$ the control.\newline
+  $=E[Y_{1,t_1}-Y_{0,t_1}|D=1]+E[Y_{0,t_1}-Y_{0,t_0}|D=1]-E[Y_{0,t_1}-Y_{0,t_0}|D=0]=\Delta^{ATET}+$counterfactual trend of treatment group$-$trend of control group
+  
+  - Identifying assumption: the two groups would have the same trend in the absence of the treatment (parallel trend assumption)
+      - counterfactual trend of treatment group$=$trend of control group $\Rightarrow \tau^{DID}=\Delta^{ATET}$
+
+$$Y_{it}=\beta_0+\beta_1 I_{t_1}+\beta_2 D_i+\delta D_i\cdot I_{t_1}+\epsilon_{it}$$
+where
+
+  - $t=\{t_0,t_1\}$
+  - $I_{t_1}=1$ for $t=t_1$ and $I_{t_1}=0$ for $t=t_0$
+  - $D_i=1$ for the treatment group and $D_i=0$ for the control group
+  - $\delta=\Delta^{DID}$
+  
+$$E[Y_{1,t_1}|D=1]=\beta_0+\beta_1+\beta_2+\delta$$
+$$E[Y_{0,t_0}|D=1]=\beta_0+\beta_2$$
+$$\Rightarrow E[Y_{1,t_1}-Y_{0,t_0}|D=1]=\beta_1+\delta$$
+\newline
+$$E[Y_{0,t_1}|D=0]=\beta_0+\beta_1$$
+$$E[Y_{0,t_0}|D=0]=\beta_0$$
+$$\Rightarrow E[Y_{0,t_1}-Y_{0,t_0}|D=0]=\beta1$$
+\newline
+$$\Rightarrow \tau^{DID}=E[Y_{1,t_t}-Y_{0,t_0}|D=1]-E[Y_{0,t_1}-Y_{0,t_0}|D=0]=\delta$$
+
+We can also include coviartes, $X_{it}$, if the identification assumption is more likely to be met after controlling for certain observables. $$Y_{it}=\beta_0+\beta_1 I_{t_1}+\beta_2 D_i+\delta D_i\cdot I_{t_1}+X_{it}\gamma+\epsilon_{it}$$
+However, in most cases the identification strategy should not depend on controlling for additional covariates. Then, we expect that adding covariates will not lead to much change in the coefficients but will only improve precision.
+
+## Fixed Effects Model
+
+$$Y_{it}=\delta D_{it}+\alpha_i+\eta_t+\nu_{it}$$
+where
+
+  - $D_{it}=1$ if $i$ geta treatment at $t$
+  - $\alpha_i$ is the time-invariant component of the error term
+  - $\eta_t$ is the common unobserved time component of the error term
+  - $\nu_{it}$ captures the remaining unobserved characteristics
+  - $\alpha_i$ and $\eta_t$ allow us to have a weaker identification assumption than a regression without fixed effects (where you need $E[\nu_{it}D_{it}]=0$), the identification assumption for the fixed effects model is $E[\nu_{it}D_{it}|\alpha_i,\eta_t]=0\Rightarrow$ the treatment must be uncorrelated with time and individual specific unobservables
+  
+Allowing for differential impacts over time $$Y_{it}=\sum_{j=0}^J\delta_jD_{i,k+j}+\alpha_i+\eta_t+\nu_{it}$$
+
+  - Suppose that treatment started at $t=k$
+  - After-treatment period is defined as $t=k+j$ where $j=0,...,J$
+  
+Cautions using DID and FE: you're identifying $\delta$ using changes in $D_{it}$ only, so
+  - if $i$ responds to long-run variation in $D_{it}$, you don't capture the response because $\alpha_i$ absorbs it
+  - if $i$ responds to national-level variation in $D_{it}$, you don't capture it because $\eta_t$ absorbs it
+  - therefore, the fixed effects model may not always be the best approach with panel data
+      - cross-sectional variation can be more useful when estimating long-run variation in $D_{it}$
+      
+  In order for the identifying assumptions to be valid, **parallel trends** must be satisfied as well as **no other concurrent changes** to just the treatment group.
+    - can never be explicitly proven true
+
+## Triple Difference
+
+$$Y_{sjt}=\beta_0+\beta_1 I_{t_1}+\beta_2 D_s+\beta_3 G_j+\gamma_1 I_{t_1}\cdot D_s+\gamma_2 D_s\cdot G_j+\gamma_3 I_{t_1}\cdot G_j+\delta D_s\cdot I_{t_1}\cdot G_j+epsilon_{sjt}$$
+where
+
+  - $t=\{t_0,t_1\}$
+  - $I_{t_1}=1$ for $t=t_1$ and $I_{t_1}=0$ for $t=t_0$
+  - states $s$ where $D_s=1$ are the treatment states, $D_s=0$ for the control
+  - groups $j$ where $j=1$ for the group of interest (e.g. high income group where policy affects this income level only), $G_j=0$ for the other group (e.g. low income)
+  - $\delta=\Delta^{DDD}$
+  
+Identification assumption: The difference in trends in $y$ between group $j_0$ and $j_1$ in treatment states would be equal to the difference in trends in $y$ between groups $j_0$ and $j_1$ in contorl states in the absence of treatment.
+
+## Synthetic Control Method
+
+Consider one treatment group ($j=1$) and many potential control groups ($j=2,...,J+1$) with one treatment period and many pre-treatment periods. Synthetic control is a matching based on variables in pre-treatment periods, including the outcome variable ($Y_{t=s}$). Using these, we find the optimal weight, $w_j$, for each control unit. Then, we can obtain a synthetic control estimate $$\tau^s=Y^T-\sum_{j=2}^{J+1}w^*_jY_j^C$$
+
+ex: $w^*_j=\arg\min \bar Y^T_{past}-\sum_{j=2}^{J+1}w_j\bar Y^C_{j,past}$ such that $w^*_j\geq 0$ and $\sum w^*_j=1$\newline ex: $w^*_j=\arg\min (Z^T-Z^0W)'V(Z^T-Z^0W)$ such that $w^*_j\geq 0, \sum w^*_j=1$
+
+  - $V$ determined relative weights for $\bar Y^T_{past}$ and $X_{past}$
+  
+## Standard Errors
+
+Conventional OLS standard error:
+
+$$E[(\hat\beta-\beta)(\hat\beta-\beta)'|X]=E[(X'X)^{-1}X'\epsilon\epsilon'X(X'X)^{-1}|x]$$ $$\Rightarrow \hat V(\hat\beta)=\hat\sigma^2(X'X)^{-1}$$
+
+  - Homoskedasticity: $Var(\epsilon_i)=\sigma^2 \forall i$
+  - Independence: $Cov(\epsilon_i,\epsilon_j)=0\forall j$
+  
+In the real world, these assumptions are unlikely to be satisfied. Therefore, this conventional variance is likely to underestimate the true variance of $\hat\beta$.
+
+### Heteroskedasticity robust standard errors
+
+Drops the first assumption
+
+  - Heteroskedasticity: $Var(\epsilon_i)\neq Var(\epsilon_j)$
+  - Independence: $Cov(\epsilon_i,\epsilon_j)=0\forall j$
+  
+$$\hat V(\hat\beta)=(\sum_{i=1}^N x_i'x_i)^{-1}(\sum_{i=1}^N x_i'x_i\sigma^2_i)(\sum_{i=1}^Nx_i'x_i)^{-1}$$
+  
+### Clustered robust standard errors
+
+Drops both assumptions (most general version, difficult to define empirically)
+
+  - Replace independence with independence across the clusters
+      - Suppose we have $G$ clusters in the data
+      - Assume $Cov(\epsilon_i,\epsilon_j)=0$ if $i$ and $j$ are in different $G$
+      
+$$\hat V(\hat\beta)=(\sum_{i=1}^N x_i'x_i)^{-1}(\sum_{i=1}^N\sum_{j=1}^N x_i'x_jE[\epsilon_j\epsilon_i|X])(\sum_{i=1}^Nx_i'x_i)^{-1}$$
+
+To model with individual $i$ in cluster $g$:
+
+$$Y_{ig}=x'_{ig}\beta+\epsilon_{ig}$$
+Then stack observations within clusters
+$$Y_g=x'_g\beta+\epsilon_g$$ ($Y_g$ and $\epsilon_g$ are $N_g\times 1$ vectors and $x_g$ is an $N_g\times k$ matrix)\newline
+And then further stack over clusters to get the usual matrix expression $$Y=x\beta+\epsilon$$
+
+$$\Rightarrow \hat V(\hat\beta)=(\sum_{g=1}^Gx'_gx_g)^{-1}(\sum_{g=1}^G x'_g\hat\epsilon_g\hat\epsilon_gx_g)(\sum_{g=1}^Gx'_gx_g)^{-1}$$ where $(\sum_{g=1}^Gx'_g\hat\epsilon_g\hat\epsilon_g'x_g)=\sum_{g=1}^G(\sum_{s=1}^{T_g}\sum_{t=1}^{T_g}x'_sx_t\hat\epsilon_s\hat\epsilon_t)$
+
+  - this relies on asymptotic property of $G\rightarrow \infty$ (large enough number of clusters)
+  
+Rules:
+
+  - Large $G$ and small $T_g$: perform well
+  - Large $G$ and large $T_g$: appear to perform well
+  - Small $G$ and large $T_g$: (very small is $G<10$) unlikely to perform well; recommended approach is to collapse data to the cluster level or bootstrap
+  - Small $G$ and small $T_g$: unlikely to perform well, but less challenging than small $G$ and large $T_g$. Anything that works in that scenario will work in this scenario.
+  
+### Bootstrapped standard errors
+
+Ex: Bootstrapping the mean
+
+  - Using the original sample $y_1,...,y_N$, draw a bootstrap sample with replacement. Repeat $N$ times. This sample with $N$ observations is called bootstrap sample $b$. 
+  - Compute the statistic of interest $\hat\theta$ (i.e. the mean, $\bar y=\hat\theta$) and call this estimate $\hat\theta_b$
+      - this could be a coefficient, standard error, ... any test statistic
+  - Repeat these steps $B$ times, collecting $B$ iterations of the test statistic, $\hat\theta_1,...,\hat\theta_B$.
+  - Bootstrapped variance is then calculated by $$\hat{Var}(\hat\theta)=\frac{1}{B-1}\sum_{b=1}^B(\hat\theta_b-\bar\hat\theta_b)^2$
+  - This variance is consistent as $B\rightarrow \infty$
+  
+Ex: Bootstrapping the standard errors
+
+1: $\Delta p_{htk}=\alpha'+\beta X_{htk}+\epsilon_{htk}$, obtain $\hat\Delta p_{htk}$ where $\Delta p_{htk}$ is a variable for hour $h$, day $t$, and market $k$.
+2: Then run $\Delta \ln q^s_{jhtk}=\alpha+\beta\hat\Delta p_{htk}+u_{htk}$ with $k=\{DA,I1\}$ where $\Delta \ln q^s_{jhtk}$ is a variable for firm $j$, hour $h$, day $t$, and market $k$.
+  - Conventional standard errors cannot be computed because of the endogeneity of (2), so bootstrapping is needed.
+
+## Maximum Likelihood Estimation
+
+Benefits: MLE can address some problems that are otherwise difficult to address by other methods; under correct specification of the density function, MLE gives us the asymptotically efficient estimators
+Cost: if we misspecify the density, the MLE is no longer consistent (this is also true for OLS estimators)
+
+Ex:
+$$Y_i\sim N(\mu,\sigma^2)\Rightarrow f(y_i;\mu,\sigma)=\frac{1}{\sigma\sqrt{2\pi}}\exp(-\frac{(y_i-\mu)^2}{2\sigma^2})$$
+Then, under i.i.d. sampling, the joint density of the entire sample, $y_1,...,y_N$, is the product of the marginal densities for each of the observations $$f(y_1,...,y_N)=\prod_{i=1}^N\frac{1}{\sigma\sqrt{2\pi}}\exp(-\frac{(y_i-\mu)^2)}{2\sigma^2})$$
+$\rightarrow$ this is the **likelihood function**\newline
+
+Then we take the log and maximize the log likelihood function $$\max_{\mu,\sigma}\ln f(y_1,...,y_N;\mu,\sigma)=\sum_{i=1}^N(-\ln\sigma-\ln\sqrt{2\pi}-\frac{(y_i-\mu)^2}{2\sigma^2})$$ FOCs\newline $\frac{\partial \ln f}{\partial \mu}:\sum_{i=1}^N \frac{y_i-\mu}{\sigma^2}=0$ $\frac{\partial \ln f}{\partial \sigma}:\sum_{i=1}^N-\frac{1}{\sigma}+\frac{(y_i-\mu)^2}{\sigma^3}=0$\newline So we get the maximum likelihood estimates\newline $\hat\mu=\bar y$\newline $\hat\sigma^2=\frac{1}{N}\sum_{i=1}^N(y_i-\bar y)^2$
+
+Generally:
+Suppose we have i.i.d. random variables $Z_1,...,Z_N$ with common density function $f(z,\theta)$. Then, the likelihood function given a sample $z_1,...,z_N$ is $$L(\theta)=\prod_{i=1}^N f(z_i,\theta)$$ The MLE of $\theta$ maximizes the log likelihood, $LL(\theta)=\ln L(\theta)$.
+
+$$\hat\theta_{ML}\sim^a N[\theta,(-E[\frac{\partial^2\mathscr{L}(\theta)}{\partial \theta \partial \theta'}])^{-1}]$$
+
+  - The likelihood function $f(y|x,\theta)$ must be correctly specified according to the true data generating process. Without this, the MLE is not consistent.
+  - The variance term is equivalent to the Cramer Rao Lower Bound, thus the MLE is asymptotically efficient.
+
+## Discrete Choice Models
+
+### Binary response models
+
+Probit:\newline
+In a probit model, we assume that $\epsilon_i$ is normal conditional on $X_i$ with mean zero and unit variance. Then,\newline $\Pr(Y_i=1|X_i)=\Pr(\epsilon_i>-X_i'\beta)=\Pr(\epsilon_i<X_i')=\Phi(X_i'\beta)$\newline $\Pr(Y_i=0|X_i)=1-\Phi(X_i'\beta)$\newline \newline If we have a Bernoulli distributed outcome variable, the likelihood function is\newline $L(\beta)=\Pr(Y_i=1|X_i)^{Y_i}\cdot\Pr(Y_i=0|X_i)^{1-Y_i}=\Phi(X_i'\beta)^{Y_i}\cdot (1-\Phi(X_i'\beta))^{1-Y_i}\Rightarrow LL(\beta)=\sum_{i=1}^N Y_i\ln\Phi(X_i'\beta)+(1-Y_i)\ln(1-\Phi(X_i'\beta))$
+
+  - The FOC will not provide an analytical solution and needs to be solved numerically
+
+The marginal effect at $x_i$ is $\frac{\partial \Pr(Y_i=1)}{\partial x}=\frac{\partial \Phi}{\partial x}(x'\beta)=\phi(x'\beta)\cdot\beta$ and the average derivative is $\frac{1}{N}\sum_{i=1}^N\phi(X'\beta)\cdot\beta$
+
+Logit:\newline
+With a logit model we assume $\epsilon_i$ is logistic. Then,\newline $\Pr(Y_i=1|X_i)=\frac{\exp(X_i'\beta)}{1+\exp(X_i'\beta)}$ and the log likelihood function is $LL(\beta)=\sum_{i=1}^N Y_i\ln \frac{\exp(X_i'\beta)}{1+\exp(X_i'\beta)}+(1-Y_i)\ln\frac{1}{1+\exp(X_i'\beta)}$
+
+  - Between a linear model, logit, and probit the coefficients will be difference but the average derivative will not vary much.
+      - Similar estimated marginal effects
+
+### Multinomial discrete choice models
+
+Utility of person $i$ choosing $j$: $U_{ij}=X'_{ij}\beta+\epsilon_{ij}$\newline
+$P_{ij}=$probability that person $i$ chooses $j=\Pr(X'_{ij}\beta+\epsilon_{ij}>X'_{ij}\beta+\epsilon_{im})=\Pr(\epsilon_{im}-\epsilon_{ij}<X'_{ij}\beta+X_{im}'\beta), \ \ \forall m\neq j$
+
+  - In the conditional logit model we assume $\epsilon_{ij}$ are independent across choices and individuals, and have type I extreme value distributions.
+      - Similar to a normal distribution but slightly skewed to the right
+      
+Conditional logit model:\newline
+$$f(\epsilon_{ij})=\exp(-\epsilon_{ij})\cdot \exp(-\exp(-\epsilon_{ij}))$$
+$$F(\epsilon_{ij})=\exp(-\exp(-\epsilon_{ij}))$$
+$$\Rightarrow P_{ij}=\Pr(X'_{ij}\beta+\epsilon_{ij}>X'_{im}\beta+\epsilon_{im})=\Pr(\epsilon_{im}-\epsilon_{ij}<X'_{ij}\beta-X'_{im}\beta) =\frac{\exp(X'_{ij}\beta)}{\sum_{m=1}^J\exp(X'_{im}\beta)} \ \ \forall m\neq j$$
+
+  - Consider $y_{ij}=1(i$ chooses $j)$
+  - Probability of $i$ choosing $j$ can be expressed by $\prod_{j=1}^J (P_{ij})^{y_{ij}}$
+  - With the assumption that choices are independent, the likelihood function is $L(\beta)=\prod_{i=1}^N\prod_{j=1}^N(P_{ij})^{y_{ij}}$
+  
+  - Logit guarantees that the local optimum obtained from the closed form solution is also the global optimum, other models have not guaranteed this.
+  - Logit imposes the independence of irrelevant alternatives (IIA) assumption
+  
+**Independence of Irrelevant Alternatives**: For any two alternatives $j=m$ and $j=k$, the ratio of logit probability is $$\frac{P_{im}}{P_{ik}}=\frac{\exp(X_{im}'\beta)}{\exp(X_{ik}'\beta)}$$ and this ratio is independent of other alternatives
+
+### Random-coefficient logit model
+
+  - Allows $\beta_i$ to vary by person, rather than assumming $\beta_i=\beta \ \ \forall i$
+  - Assume that person $i$ knows their own $\beta_i$. Then, $\P_{ij}=\frac{\exp(X_{ij}'\beta_i)}{\sum_{m=1}^J\exp(X_{im}'\beta_i)}$
+  - We don't know $\beta_i$ so we can't calculate this explicitly, but suppose we know $f(\beta)$.
+  
+Suppose $f(\beta)\sim N(\bar\beta,\sigma^2_\beta)$. Then, we can find $$P_{ij}=\int\frac{\exp(X_{ij}'\beta)}{\sum_{m=1}^J\exp(X_{im}'\beta)}f(\beta)d\beta$$
+
+This likelihood function is complex and it is useful to use MSLE in this situation.
+
+### Maximum simulated likelihood estimation (MSLE)
+
+Suppose that the density of $\beta_i$ is $f(\beta|\theta)$, where $\theta$ is a set of parameters that characterize the distribution.\newline [ex: $f(\beta|\theta)=N(\beta_0,\sigma^2),\theta=\{\beta_0,\sigma\}$] $P_{ij}=\int L_{ij}(\beta)f(\beta|\theta)d\beta$ where $L_{ij}(\beta)=\frac{\exp(X_{ij}'\beta_i)}{\sum_{m=1}^J\exp(X_{im}'\beta_i)}$ 
+
+  - $P_{ij}$ is complex but can be approximated through simulation for any value of $\theta$
+  
+  
+  - For a given $\theta$, draw a value of $\beta$ from $f(\beta|\theta)$ and label it $\beta_r$ with the superscript $r=1$, referring to the first draw.
+  - Calculate the logit formula $L_{ij}(\beta_r)$ with draw $\beta_r$
+  - Repeat $R$ times, $r=1,...,R$, and average the result. $$\check P_{ij}=\frac{1}{R}\sum_{r=1}^RL_{ij}(\beta^r)$$ which is an unbiased estimator of $P_{ij}=\int L_{ij}(\beta)f(\beta|\theta)d\beta$ for a given $\theta$
+  - Then we get the simulated log likelihood for a given $\theta$ $$SLL(\theta)=\sum_{i=1}^N\sum_{j=1}^J d_{ij}\ln\check P_{ij}$$ where $d_{ij}=1$ if person $i$ choose $j$ and 0 otherwise.
+  
+## Generalized Method of Moments
+
+### Method of moments
+
+**Cramer Rao Lower Bound**: Under certain assumptions, the MLE will always achieve the minimum variance unbiased estimator. The method of moments do not employ the same assumptions (functional form, distribution, etc.) and, thus, will not necessarily produce the same minimum variance.
+
+Ex: Estimating the population mean when $y$ is i.i.d. with mean $\mu$\newline Population moment condition: $E[y_i-\mu]=0$\newline Sample moment condition: $\frac{1}{N}\sum_{i=1}^N(y_i-\mu)=0$\newline
+Solving for $\mu$ gives $\hat\mu_{MM}=\bar y$
+
+Ex: Estimating $y=x'\beta+u$ where $x$ and $\beta$ are $K\times 1$ vectors\newline Population moment condition: $E[xu]=E[x(y-x'\beta)]=0$\newline Sample moment condition: $\frac{1}{N}\sum_{i=1}^Nx_i(y_i-x_i'\beta)=0$\newline
+Solving for $\beta$ gives $\hat\beta_{MM}(=\hat\beta_{OLS})$
+  
+  - The method of moments estimator of the linear regression is the OLS estimator
+  
+Method of moments (just identified IV, allowing for endogeneity in the treatment)
+
+$$y=x'\beta+u$$ where $x$ and $\beta$ are $K\times 1$ vectors\newline Population moment condition: $E[zu]=E[z(y-x'\beta)]=0$
+
+  - $z$ must be uncorrelated with $u$
+  
+Sample moment condition: $\frac{1}{N}\sum_{i=1}^N z_i(y_i-x_i'\beta)=0$
+
+Solving for $\beta$ gives $\hat\beta_{MM}=\hat\beta_{IV}$
+
+  - pure IV, not 2SLS
+  
+**General MM (just identified)**
+
+With $K$ unknown parameters and $M=K$ moment conditions, $$E[\psi(z,\theta)]=0$$ so we have a $K$-dimensional vector of moment functions with the dimension of $\theta$ equal to $K$ $\theta_{MM}$ solves $$\frac{1}{N}\sum_{i=1}^N\psi(z,\hat\theta)=0$$ $$\hat\theta=\arg\min_{\theta}(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))'(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))$$
+
+**Method of moments (over identified 2SLS)**
+
+With $K$ unknown parameters and $M>K$ moment conditions, $$E[\psi(z,\theta)]=0$$ so we have more moment conditions than parameters. There is no solution $\hat\theta$ which will satisfy the sample moment parameters $$\frac{1}{N}\sum_{i=1}^N\psi(z,\hat\theta)=0$$. So, we find the $\hat\theta$ that minimizes quadratic form $$\frac{1}{N}\sum_{i=1}^N\psi(z,\hat\theta)=0$$ $$\Rightarrow \hat\theta=\arg\min_{\theta}(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))'W(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))$$ where $W$ is a positive definite, symmetric weighting matrix of size $M\times M$.
+
+  - As long as your moment conditions are correctly specified, the choice of $W$ doesn't matter. $W$ must be chosen carefully when trying to minimize variance (increase efficiency).
+
+Obtaining $W$
+
+  - Estimate $\theta$ by minimizing the GMM objective function for an arbitrary positive definite symmetric matrix (e.g. the identity matrix) to get a consistent but not necessarily efficient estimate $\hat\theta_{init}$.
+  - Use $\hat\theta_{init}$ to get an estimate of the optimal weight matrix $$\hat S=\frac{1}{N}\sum_{i=1}^N \psi(z,\hat\theta_{init})\psi(z,\hat\theta_{init})'$
+  - The optimal (most efficient) $\theta_{GMM}$ is $$\hat\theta_{OGMM}=\arg\min_\theta (\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))'S^{-1}(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))$$ 
+  
+Under appropriate conditions, $\theta_{OGMM}$ is consistent and asymptotically normally distributed with the variance $$Var[\hat\theta_{OGMM}]=\frac{1}{N}(\hat G'\tilde S^{-1}\hat G)^{-1}$$ where $\hat G=\frac{1}{N}\sum_{i=1}^N \frac{\partial \psi(z,\hat\theta)}{\partial \theta}$, $\tilde S=\frac{1}{N}\sum_{i=1}^N \psi(z,\hat\theta)\psi(z,\hat\theta)'$. $\hat G$ and $\tilde S$ are evaluated at $\hat \theta_{OGMM}$
+
+###Two step GMM
+
+Ex: Consider two population moment conditions $$E[\psi(x,y,\theta)]=\begin{pmatrix} x-\theta \\ y-\theta \end{pmatrix}=\begin{pmatrix} 0 \\ 0 \end{pmatrix}$$
+
+  - $x$ and $y$ are unbiased estimates of $\theta$ with possibly different variances
+
+Sample moment conditions $$\frac{1}{N}\sum_{i=1}^N\psi(z,\theta)=\begin{pmatrix}\frac{1}{N} \sum_{i=1}^N (x-\theta) \\ \frac{1}{N}\sum_{i=1}^N (y-\theta)\end{pmatrix}=\begin{pmatrix}\bar{x}-\theta \\ \bar{y}-\theta\end{pmatrix}$$
+
+$$\hat\theta=\arg\min_{\theta}(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))'W(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))$$ where $\frac{1}{N}\sum_{i=1}^N\psi(z,\theta)=\begin{pmatrix}\frac{1}{N}\sum_{i=1}^N(x-\theta) \\ \frac{1}{N}\sum_{i=1}^N(y-\theta)\end{pmatrix}=\begin{pmatrix}\bar{x}-\theta \\ \bar{y}-\theta\end{pmatrix}$
+
+Start with $W=\alpha\cdot\begin{pmatrix}c_{11} \ c_{12} \\ c_{21} \ c_{22}\end{pmatrix}, c_{12}=c_{21}$. Then we have $Q_W(\theta)=(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))'W(\frac{1}{N}\sum_{i=1}^N\psi(z,\theta))=\alpha\cdot \begin{pmatrix}\bar{x}-\theta \\ \bar{y}-\theta\end{pmatrix}'\begin{pmatrix}c_{11} \ c_{12} \\ c_{21} \ c_{22}\end{pmatrix}\begin{pmatrix}\bar{x}-\theta \\ \bar{y}-\theta\end{pmatrix}$\newline FOC: $\hat\theta_\lambda =\lambda \bar x+(1-\lambda)\bar x$ where $\lambda=\frac{c_{11}+c_{12}}{c_{11}+c_{21}+c_{12}+c_{22}}=\frac{c_{11}+c_{12}}{c_{11}+c_{22}+2c_{12}}$.\newline
+The variance of $\hat\theta_\lambda$ is $\lambda^2\sigma_{xx}+(1-\lambda)^2\sigma_{yy}+2\lambda(1-\lambda)\sigma_{xy}$. In order to minimize this variance, we take FOC and solve.\newline FOC: $\lambda^*=\frac{\sigma_{yy}+\sigma_{xy}}{\sigma_{yy}+\sigma_{xx}+2\sigma_{xy}}$. Thus, the optimal weight matrix is found to be $$W^*=\alpha\cdot\begin{pmatrix} c_{11} \ c_{12} \\ c_{21} \ c_{22} \end{pmatrix}=\alpha\cdot\begin{pmatrix} \sigma_{yy} \ -\sigma_{yx} \\ -\sigma_{xy} \ \sigma_{xx}\end{pmatrix}$$ where $\alpha$ can be any scalar.
+
+In general, $W^*=S^{-1}$ minimizes the variance of $\theta$. But $S$ is usually unknown because it depends on $\theta$.
+  
+In general, $\hat\beta_{OGMM}$ is more efficient than $\hat\beta_{2SLS}$, but this efficiency gain will not be large if errors are heteroskedastic. Therefore, some researchers prefer $\hat\beta_{2SLS}$ for linear regressions.
+
+GMM can also be applied to non-linear IV regression.
+
+## Discrete Choice Models with Aggregated Data
+
+  - Use if you don't have individual choice data
+
+### Random Utility Model
+
+Ex: air conditioners, $x_{jc}=x_c\cdot e_j$, $x_c=$ ambient air pollution in city $c$, $e_j=$ effectiveness of purifier $j$ $$u_{ijc}=\beta_ix_{jc}+\alpha_ip_{jc}+\xi_{jc}+\epsilon_{ijc}$$ $\beta_i'=$marginal utility for clean air, $\epsilon_{ijc}\sim$ extreme value type I distribution
+
+### Standard logit demand approach
+
+Given $u_{ijc}=\beta_ix_{jc}+\alpha_ip_{jc}+\xi_{jc}+\epsilon_{ijc}$ assume that $\beta$ and $\alpha$ do not depend on $i$
+
+$$P_{ijc}=\Pr(U_{ijc}>U_{ij'c})\forall j'=\frac{\exp(\beta x_{jc}+\alpha p_{jc}+\xi_{jc})}{\sum_{j'=0}^J \exp(\beta x_{j'c}+\alpha p_{j'c}+\xi_{j'c})}$$
+
+Note that this is independent of $i$. So, $$\sum_{i=1}^{N_c}P_{ijc}=N_c\cdot \Pr(U_{ijc}>U_{ij'c})\forall j'=\frac{\exp(\beta x_{jc}+\alpha p_{jc}+\xi_{jc})}{\sum_{j'=0}^J \exp(\beta x_{j'c}+\alpha p_{j'c}+\xi_{j'c})}$$
+Then the market share for any product $j$ in city $c$ at time $t$ is $s_{jc}=\frac{1}{N_c}\sum_{i=1}^{N_c} P_{ijc}$. Solve further by taking the log market share for $j$ minus the log market share for the outside option $(0)$. $$\ln s_{jc}-\ln s_{0c}=\beta x_{jc}+\alpha p_{jc}+\xi_{jc}$$
+
+  - Simple linear equation that can be estimated with OLS
+  - If price and demand shocks are correlated, OLS will be biased and inconsistent. Remedy by (1) using fixed effects when possible (i.e. product ($j$) and city ($c$) fixed effects$\rightarrow \xi_{j}+\lambda_c$) and (2) instrument price with some variable $z_{cj}$ (looking for a supply shifter - affects price without affecting demand)
+
+### Random coefficient logit approach
+
+Given $u_{ijc}=\beta_ix_{jc}+\alpha_ip_{jc}+\eta_j+\lambda_c+\xi_{jc}+\epsilon_{ijc}$,
+
+  - $\beta_i=\beta_0+\beta_1D_i+u_i$
+  - $\alpha=\alpha_0+\alpha_1D_i+e_i$
+  - Explains taste heterogeneity by demographics ($D_i$) and a random terms $u_i\sim N(0,\sigma_{\beta})$ and $e_i\sim N(0,\sigma_{\alpha})$
+  
+This allows for heterogeneity in $\beta'$ and $\alpha$ (taste), flexible substitution patterns, and less restrictive price elasticity. However, it does not have an analytical solution.
+
+Partition the expression into that which depends on $i$ and that which does not.\newline$\delta_{jc}=\beta_0'x_{jc}+\alpha_0p_{jc}+\eta_j+\lambda_c+\xi_{jc}$, $\mu_{ijc}=(\beta_1D_i+u_i)z_{jc}+(\alpha_1D_i+e_i)p_{jc}$\newline $u_{ijc}=\beta_ix_{jc}+\alpha_ip_{jc}+\eta_j+\lambda_c+\xi_{jc}+\epsilon_{ijc}=\delta_{jc}+\mu_{ijc}+\epsilon_{ijc}$
+
+Then the market share is $s_{jc}=\frac{1}{N_c}\sum_{i=1}^{N_c} s_{ijc}=\frac{1}{N_c}\sum_{i=1}^{N_c}\frac{\exp(\delta_{jc}+\mu_{ijc})}{1+\sum_{k=1}^J\exp(\delta_{kc}+\mu_{ijk})}$. We want to find parameters that equalize $s_{jc}$ (predicted) and the actual market shares of our model.
+
+Denote $\theta=(\theta_1,\theta_2)$ where $\theta_1$ is a set of parameters that do not vary by $i$ and $\theta_2$ is a set that do vary by $i$. Consider fixing to certain starting values $\theta_2=\hat\theta_2$. $\delta^{h+1}_{.c}=\delta_{.c}^h+\ln S^{obs}_{.c}-\ln s_{.c}(\delta_{.c};\hat\theta_2)$ where $s_{.c}$ is the market share predicted by the model and $S^{obs}_{.c}$ is the observed market share from the data. This iteration continues until $h=H$, when the change in $\delta$ is smaller than some tolerance level. At this, the iteration finds the $\delta_{.c}$ that equalizes the actual market share and the predicted market share. Once $\delta_{.c}$ is obtained, $\xi_{jc}$ is written, $\xi_{jc}=\delta_{jc}-(\beta_0'x_{jc}+\alpha_0p_{jc}+\eta_j+\lambda_c)$.\newline Suppose that we have instruments $Z_{jc}$ that satisfy $E[Z_{jc}\xi_{jc}]=0$ then we can estimate $$\hat\theta=\arg\min_{\theta}(\frac{1}{N}\sum_{i=1}^N\psi(z,\hat\theta))'\hat S^{-1}(\frac{1}{N}\sum_{i=1}^N\psi(z,\hat\theta))$$ where $\psi(z,\hat\theta)=Z_{jc}\xi_{jc}(\hat\theta)$. This procedure will provide the optimal $\hat\theta_1^*$ given $\hat\theta_2$.
+
+Summary process:
+
+Given $\theta=(\theta_1,\theta_2)$ where $\theta_1$ is parameters for the linear part and $\theta_2$ parameters for the non-linear,
+
+  1. Start with an initial value for $\hat\theta_2$
+  2. Use the fixed point iteration to obtain $\delta_{jc}$ - mean utility level for $j$ at $c$
+  3. Run a linear 2SLS for $\xi_{jc}=\delta_{jc}-(\beta_0'x_{jc}+\alpha_0p_{jc}+\eta_j+\lambda_c)$ by using $E[Z_{jc}\xi_{jc}]=0 \rightarrow$ gives $\hat\theta_1$ given a $\hat\theta_2$
+  4. Calculate the GMM objective function with $(\hat\theta_1,\hat\theta_2)$
+  5. Repeat with different levels of $\theta_2$ to find the optimal GMM that minimizes the objective function at a variety of starting points. $\theta_{OGMM}=(\hat\theta_1,\hat\theta_2)$
+  
+Be sure to:
+
+  - find a strong instrument
+  - have at least 100 sets of randomly drawn starting values
+  - try different non-linear search methods
+  - use conservative tolerance levels
+  - try different numbers of draws for the Monte Carlo simulation
+
+## Numerical Optimization
+
+Used for MLE and GMM.
+
+Ex: for a given MLE $\hat\beta$ search, suppose $LL(\beta)=\sum_{i=1}^N\ln\frac{P_n(\beta)}{N}$
+  
+### Grid search methods
+
+  1. Select many values of $\beta$ along a grid
+  2. Compute $LL(\beta)$ for each value
+  3. Choose the estimate of $\beta$ which provides the largest $LL(\beta)$
+  
+  - Works for any kind of $LL(\beta)$ - even those that are discontinuous or not differentiable
+  - Impractical because there can be a large number of possible combinations of $\beta$ when $K$ is large
+
+### Newton-Raphson methods
+
+Uses $A_t=-H_t^{-1}$, where $H_t$ is the Hessian and $g_t$ is the gradient $$LL(\beta_{t+1})=LL(\beta_t)+(\beta_{t+1}-\beta_t)'g_t+\frac{1}{2}(\beta_{t+1}-\beta_t)'H_t(\beta_{t+1}-\beta_t)$$ $$g_t=(\frac{\partial LL(\beta)}{\partial \beta})_{\beta_t}$$ $$H_t=(\frac{\partial g_t}{\partial \beta'})_{\beta_t}=(\frac{\partial^2LL(\beta)}{\partial\beta\partial\beta'})_{\beta_t}$$
+
+Searching for $LL(\beta_{t+1})$ which maximizes $LL(\beta_{t+1})$.\newline FOC: $\frac{\partial LL(\beta_{t+1})}{\partial \beta_{t+1}}=g_t+H_t(\beta_{t+1}-\beta_t)=0$ $$\beta_{t+1}=\beta_t+g_t(-H_t^{-1})$$
+
+  - $g_t$ tells us which direction to move next
+  - $H_t$ tells us the step size to take
+
+### Bayesian methods
+
+Alternative to MLE is using a Bayesian procedure.
+
+  - Start with a prior parameter value and iteratively update posteriors
+  - Advantages: does not require maximization of a function, may not require as many simulations as MSLE
+  - Disadvantages: MSLE may be much faster than Bayesian updating, coding needs to be done by hand
+  - If you are concerned with correlation between $\beta_i$s in the random coefficients, Bayesian is worth going through. Otherwise, MLE is usually a better method to use.

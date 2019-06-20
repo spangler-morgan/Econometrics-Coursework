@@ -1,0 +1,135 @@
+---
+title: "Problem Set 4"
+author: "Morgan Conklin Spangler"
+date: "2/27/2019"
+output: pdf_document
+header-includes:
+  - \usepackage{setspace}\doublespacing
+  - \usepackage{ amssymb }
+  - \usepackage{amsmath}
+  - \usepackage{tikz}
+  - \usepackage{pgfplots}
+  - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \usepackage{ dsfont }
+  - \usepackage{ mathrsfs }
+  - \usepackage{ wasysym }
+  - \usepackage{mathtools}
+  - \usepackage{tcolorbox}
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, results='markup',strip.white=TRUE, warnings=FALSE, comment=NA, tidy=TRUE, prompt=FALSE)
+```
+
+*A. Analytical Problems*\newline
+
+ 1. Consider assumptions 1-4 that provide conditions under which IV identifies a local average treatment effect. Show that if you individually assume that there exist no always-takers, then IV identifies the average treatment effect on the treated.\newline
+ When the IV identifies a local average treatment effect, we say the estimand is $\Delta^{LATE}=\frac{E(Y|T_i=1)-E(Y|T_i=0)}{E(D_i|T_i=1)-E(D_i|T_i=0)}$ where $T_i$ defines whether or not someone is assigned to the treatment (1 and 0, respectively) and $D_i$ defines whether or not someone actually receives treatment (1 and 0, respectively).\newline $E(Y|T_i=1)=p_nE(Y_{0,i}|n)+p_cE(Y_{1,i}|c)+p_aE(Y_{1,i}|a)$\newline $E(Y|T_i=0)=p_nE(Y_{0,i}|n)+p_cE(Y_{0,i}|c)+p_aE(Y_{1,i}|a)$\newline $E(D_i=1|T_i=1)=(p_a+p_c)\cdot 1=p_a+p_c$\newline $E(D_i|T_i=0)=p_a\cdot 1=p_a$ such that $p_n$ represents the proportion of the population which are never takers, similarly $p_c$ represents compliers, and then $p_a$ represents always takers. $p_n+p_c+p_a=1$. If we assume $p_a=0$,\newline $E(Y|T_i=1)=p_nE(Y_{0,i}|n)+p_cE(Y_{1,i}|c)$\newline $E(Y|T_i=0)=p_nE(Y_{0,i}|n)+p_cE(Y_{0,i}|c)$\newline $E(D_i=1|T_i=1)=p_c$\newline $E(D_i|T_i=0)=0$ $$\Rightarrow E(Y|T_i=1)-E(Y|T_i=0)=p_cE(Y_{1,i}|c)-p_cE(Y_{0,i}|c)$$ $$\Rightarrow E(D_i|T_i=1)-E(D_i|T_i=0)=p_c$$ $$\Rightarrow \frac{E(Y|T_i=1)-E(Y|T_i=0)}{E(D_i|T_i=1)-E(D_i|T_i=0)}=\frac{p_cE(Y_{1,i}|c)-p_cE(Y_{0,i}|c)}{p_c}=E(Y_{1,i}|c)-E(Y_{0,i}|c)=\Delta^{ATT}$$ *(ATT= average treatment effect on the treated)* \begin{tcolorbox}Therefore, when we assume there are no always takers, and general assumptions 1-4 apply, the LATE in IV identifies the ATT.\end{tcolorbox}
+ 2. Characterize the fixed-effects estimator as an instrumental variables estimator.\newline
+ Assume we have some general equation, $y_{it}=x'_{it}\beta+\alpha_i+\delta_t+\epsilon_{it}$, where $i,t$ represents individuals and some other group or time identifier, respectively. \begin{tcolorbox}In order to simulate fixed effects on the grouping identifier $t$, we include $T-1$ dummy variables, $y_{it}=x'_{it}\beta+\alpha_i+\delta_t+I_{t=1}+I_{t=2}+...+I_{t=T-1}+\epsilon_{it}$. Then, the coefficient on each dummy variable will estimate the additional fixed effect of each group identity (or time period), with the $T$th group being the "baseline"/"normal". (Such that "additional" fixed effect means the effect in addition to the "normal" amount by virtue of individual $i$ being in group $t$.)\end{tcolorbox}
+ 3. Consider the model $$y_{it}=\beta_2x_i+v_i+\epsilon_{it} \ \ \ \ \ \ \ \ \ i=1,...,N; \ \ t=1,...,T$$ where $E(v_i)=E(\epsilon_{it})=E(v_i\epsilon_{it})=0, V(v_i)=\sigma^2_v,V(\epsilon_{it})=\sigma^2_\epsilon,\rho=\frac{\sigma^2_v}{\sigma^2_v+\sigma^2_\epsilon}$. The parameter $\rho$ is sometimes referred to as the intra-class correlation coefficient. Notice that this regressor varies between, not within groups defined by values of $i$. Let the data be centered and for simplicity assume that $x$ is non-stochastic.\newline Denote the conventional, or default, variance of the OLS slope coefficient by $V_d(b_2)$ and denote the clustered variance of the OLS slope coefficient by $V(b_2)$.
+    a) Show that if the regressors are non-stochastic and group sizes are all the same and equal to $T$, then the variance inflation factor is given by $$\frac{V(b_2)}{V_d(b_2)}=1+(T-1)\rho.\ \ \ \ \ \ \ \ \ (*)$$ Hint: you can write $E(\eta_i\eta_i')=\sigma^2_\eta[(1-\rho)I_T+\rho\iota_T\iota'_T]$\newline
+    For the function $y_{it}=\beta_2x_i+v_i+\epsilon_{it}$, $\hat{\beta}=(X'X)^{-1}X'(Y-V)=(X'X)^{-1}X'(\beta X'+V+\epsilon)=\beta+(X'X)^{-1}X'V+(X'X)^{-1}X'\epsilon$\newline $\Rightarrow Var(\beta)=E[[X'X]^{-1}X'VV'X[X'X]^{-1}]=[X'X]^{-1}E[X'VV'X]+[X'X]^{-1}E[X'\epsilon\epsilon'X]=[X'X]^{-1}[E[X'VV'X]+E[X'\epsilon\epsilon'X]]=[X'X]^{-1}[E[X'VV'X]+\sigma^2_\epsilon]$ In the usual OLS regression, $E[X'VV'X]=\sum_{t=1}^T\sigma_v^2=T\sigma^2_v$ and when we cluster over $t$, $E[X'VV'X]=\sigma_v^2$ \begin{tcolorbox}$\Rightarrow \frac{V(b_2)}{V_d(b_2)}=\frac{[X'X]^{-1}[T\sigma^2_v+\sigma^2_\epsilon]}{[X'X]^{-1}[\sigma_v^2+\sigma^2_\epsilon]}=\frac{T\sigma^2_v+\sigma^2_\epsilon}{\sigma_v^2+\sigma^2_\epsilon}=\frac{T\sigma^2_v+\sigma^2_\epsilon+\sigma^2_v-\sigma^2_v}{\sigma_v^2+\sigma^2_\epsilon}=\frac{\sigma^2_v+\sigma^2_\epsilon+(T-1)\sigma^2_v}{\sigma^2_v+\sigma^2_\epsilon}=1+(T-1)\frac{\sigma^2_v}{\sigma^2_v+\sigma^2_\epsilon}=1+(T-1)\rho$\end{tcolorbox}
+    b) Explain concisely what expression $(*)$ means. \begin{tcolorbox}Expression $(*)$ means that the variance when running an OLS regression compared to the clustered regression is inflated by a factor of $(T-1)$, so if there is only 1 group (T=1), the OLS and the clustered regression will be the same. However, as $T\rightarrow \infty$, the variance will be extremely inflated and the clustered regression will give you a much more precise estimate.\end{tcolorbox}
+    c) Explain intuitively but precisely why the variance inflation factor takes this form.\newline \begin{tcolorbox}The variance inflation factor takes this form because as we allow for greater numbers of groups, that is essentially like adding more fixed effect dummy variables which will eat up more of the variation in the error term. So, if we add in a lot of group variables that may not necessarily make sense theoretically, the variance will still decrease because the error term will be broken up into smaller and smaller bits.\end{tcolorbox}
+    If $x$ now varies both within and between groups, and group sizes vary as well, then the variance-inflation takes the form: $$\frac{V(b_2)}{V_d(b_2)}=1+[\frac{V(T_i)}{\bar{T}}-1]\rho\rho_x,$$ where $T_i$ is the size of group $i$, $\bar{T}$ is the average group size and $rho_x$ is the within-group share of the variance of $x$.
+    d) Identify and explain concisely the four factors that contribute to a high-variance inflation factor.
+    \begin{tcolorbox}$V(T_i)$: $V(T_i)$ is the variance of the group sizes, which increases with variance inflation ($\frac{\partial \frac{V(b_2)}{V_d(b_2)}}{\partial V(T_i)}\geq 0$)\newline
+    $\bar{T}$: $\bar{T}$ is the average group size, which decreases with variance inflation ($\frac{\partial \frac{V(b_2)}{V_d(b_2)}}{\partial \bar{T}}\leq 0$)\newline
+    $\rho$: $\rho$ is the correlation between groups, which increases with variance inflation ($\frac{\partial \frac{V(b_2)}{V_d(b_2)}}{\partial \rho}\geq 0$)\newline
+    $\rho_x$: $\rho_x$ is the correlation within a group (the cross-observation correlation), which increases with variance inflation ($\frac{\partial \frac{V(b_2)}{V_d(b_2)}}{\partial \rho_x}\geq 0$)\end{tcolorbox}
+    e) Explain why the so-called Moulton problem is a particularly serious issue for variables that vary only between groups. 
+      \begin{tcolorbox}The Moulton problem is a serious issue when we have variables which vary between groups because we don't know how to structure the estimator for $\rho$, which we would need for this OLS correction to be useful.\end{tcolorbox}\newpage
+*B. Computational Problems*\newline
+
+  (a) (i) Using pp420_data.dta, fit an OLS regression of earnings on black, higrade, and age.
+```{r a1, echo=FALSE, include=TRUE}
+library(haven)
+require(tidyr)
+dat<- read.csv("data.csv",header=TRUE)
+b1 <- lm(earn ~ black + higrade + age, dat)
+summary(b1)
+```
+  
+  (ii) Estimate the model using OLS again, but this time obtain robust estimates of the standard errors. How badly biased were the usual OLS standard errors? For which regressors was the bias the worst? Explain why.
+```{r a2}
+library(foreign)
+library(sandwich)
+library(lmtest)
+coeftest(b1, vcov = vcovHC(b1, type="const"))
+coeftest(b1, vcov = vcovHC(b1, type="HC"))
+coeftest(b1, vcov = vcovHC(b1, type="HC0"))
+coeftest(b1, vcov = vcovHC(b1, type="HC1"))
+coeftest(b1, vcov = vcovHC(b1, type="HC2"))
+coeftest(b1, vcov = vcovHC(b1, type="HC3"))
+coeftest(b1, vcov = vcovHC(b1, type="HC4"))
+```
+*(all possible types of $\Omega$ in the variance covariance matrix function in R were used to find possible biases, the first in order is the usual homoskedasticity assumption)*\newline
+\begin{tcolorbox}It does not appear that these estimates were too badly biased as all three parameters remained highly significant and had similar standard errors. However, as expected, the standard errors for all three parameters increased with the robust variance covariance matrix. However, it appears that "higrade" had the biggest change in the t-value associated with it's signficance and bias in it's parameter estimate. I'd assume that this is the case because there are people who are high earners regardless of a low level of schooling (i.e. lucky entrepreneurs) and relatively low earners regardless of a high level of schooling (i.e. individuals who get a master's in liberal or fine arts).\end{tcolorbox}
+  
+  (iii) Now estimate the model by GLS. What was the efficiency loss associated with the robust OLS covariance matrix?
+```{r a3, echo=FALSE, include=TRUE}
+library(nlme)
+b3 <- gls(earn ~ black + higrade + age, data=dat, correlation=NULL, weights=NULL, na.action=na.omit)
+summary(b3)
+```
+\begin{tcolorbox}As the robust covariance matrix didn't appear to change our standard error estimates (in terms of significance and parameter estimates, at least), the GLS shows that there was only a small amount of efficiency loss when using robust standard errors.\end{tcolorbox}
+  
+  (b) Labor economists typically view earnings as a function of experience. Since experience is the sum of past labor supply, however, it may be correlated with the current earnings disturbance. It is thus a candidate for instrumental variables.
+      (i) Construct experience as the running sum of employment, where the sample member is employed in a quarter if her earnings are greater than zero in that quarter.
+```{r b1, echo=FALSE, include=FALSE}
+library(dplyr)
+dat$employ <- ifelse(dat$earn > 0, 1,
+  ifelse(dat$earn == 0, 0, NA))
+dat <- dat %>%
+  group_by(sampleid) %>%
+  mutate(exp=cumsum(employ))
+```
+
+  (ii) Regress earnings on experience, higrade, and black. Correct the OLS standard errors for the panel structure of the data throughout the exercise. Based on the OLS coefficient, how much is an additional quarter's experience worth?
+```{r b2, echo=FALSE}
+library(haven)
+require(tidyr)
+library(multiwayvcov)
+library(lmtest)
+b4 <- lm(earn ~ black + higrade + exp, dat)
+vcov_person <- cluster.vcov(b4, dat$sampleid)
+coeftest(b4, vcov_person)
+```
+\begin{tcolorbox}Based on this regression, an additional quarter's experience is worth an additional \$561.45 (approximately) in earnings.\end{tcolorbox}
+      (iii) As an instrument for experience, use the treat variable. Treat equals one for people assigned to the treatment group and zero for those assigned to the control group. Random assignment implies that treat is uncorrelated with the earnings disturbance. Since the experiment was designed to increase employment, it should also increase experience. Estimate the first-stage least squares regression to determine how highly correlated the instrument is with experience.
+```{r b3, echo=FALSE}
+library(haven)
+require(tidyr)
+library(multiwayvcov)
+library(lmtest)
+b5 <- lm(exp ~ treat, dat)
+vcov_person2 <- cluster.vcov(b5, dat$sampleid)
+coeftest(b5, vcov_person2)
+```
+
+  (iv) Now estimate the earnings equation from (ii) by IV, using treat as the instrument for experience. Do this using Stata's ivregress command. Based on the IV coefficient, how much is an additional quarters experience worth? Test the hypothesis that the true effect of experience is zero.
+```{r b4, echo=FALSE}
+library(haven)
+require(tidyr)
+library(multiwayvcov)
+library(AER)
+library(ivpack)
+b6 <- ivreg(earn ~ exp + black + higrade| black + higrade + treat, data = dat)
+y <- b6$y
+x <- model.matrix(b6, component="regressors")
+z <- model.matrix(b6, component="instruments")
+summary(b6,vcov=sandwich)
+```
+\begin{tcolorbox}Using an IV test, an additional quarter of experience is now worth \$765.58 (approximately). Testing the coefficients true value to be zero, we find that experience is not equal to zero with significance at the $\alpha=.05$ level.\end{tcolorbox}
+
+
+  (v) Now compute a Hausman test for the endogeneity of experience. What do you conclude about the effect of experience on earnings?
+```{r b5, echo=FALSE}
+library("systemfit")
+b6_ols <- systemfit(earn ~ exp, data = dat, method = "OLS")
+b6_iv <- systemfit(earn ~ exp, data = dat, method = "2SLS", inst = ~ treat)
+hausman.systemfit(b6_iv, b6_ols)
+```
+\begin{tcolorbox}With such a high p-value, we fail to reject the hypothesis that there is an endogeneity problem with the experience parameter. In total, I conclude that experience is strongly, positively correlated with earnings (as expected), and I see no clear reason to use the IV estimate rather than the OLS with these results.\end{tcolorbox}

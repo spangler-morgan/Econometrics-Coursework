@@ -1,0 +1,80 @@
+---
+title: "PPHA 41400 HW 4"
+author: "Morgan Conklin Spangler"
+date: "12/4/2018"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Q1
+```{r Q1, echo=FALSE, warning=FALSE, message=FALSE}
+Cal <- read.csv("~/Desktop/UC/PPHA 41400/Cal.csv")
+Cal$uhrswork[Cal$uhrswork=='N/A'] <- 0
+Cal$uhrswork[Cal$uhrswork=='99 (Topcode)'] <- 99
+model_withcov <- lm(morekids ~ samesex + hisp + white + black + asian + other, data=Cal)
+model_wocov <- lm(morekids ~ samesex, data=Cal)
+p <- model_withcov$coefficients
+q <- model_wocov$coefficients
+results <- c(p, q)
+results
+```
+
+Obviously, when a basic OLS model is run with and without covariates, we see that a mother having children of the same sex is positively correlated with the decision to have a third child.
+
+## Q2
+```{r Q2, echo=FALSE, warning=FALSE, message=FALSE}
+work <- factor(x=Cal$workedyr, levels=c("No","No, but worked 1-5 years ago (ACS only)", "Yes"), labels = c("N", "N", "Y"))
+Cal <- cbind(Cal, work)
+ols_incearn <- lm(incearn ~ morekids + hisp + white + black + asian, data=Cal)
+y1_ols <- ols_incearn$coefficients
+ols_uhrswork <- lm(uhrswork ~ morekids + hisp + white + black + asian, data=Cal)
+y2_ols <- ols_uhrswork$coefficients
+ols_workedyr <- lm(work ~ morekids + hisp + white + black + asian, data=Cal)
+y3_ols <- ols_workedyr$coefficients
+y_ols <- c(y1_ols,y2_ols,y3_ols)
+y_ols
+```
+
+## Q3
+```{r Q3, echo=FALSE, warning=FALSE, message=FALSE}
+stage1 <- lm(samesex ~ morekids, data=Cal)
+z <- predict(stage1, type='response')
+Cal <- cbind(Cal,z)
+ls_incearn <- lm(incearn ~ z + hisp + white + black + asian, data=Cal)
+y1_ls <- ls_incearn$coefficients
+ls_uhrswork <- lm(uhrswork ~ z + hisp + white + black + asian, data=Cal)
+y2_ls <- ls_uhrswork$coefficients
+ls_workedyr <- lm(work ~ z + hisp + white + black + asian, data=Cal)
+y3_ls<- ls_workedyr$coefficients
+y_ls <- c(y1_ls,y2_ls,y3_ls)
+y_ls
+```
+
+## Q4
+```{r Q4, echo=FALSE, warning=FALSE, message=FALSE}
+treat <- subset(Cal, morekids==1)
+treat_model1 <- lm(incearn ~ samesex+ hisp + white + black + asian, data=treat)
+fit1 <- treat_model1$coefficients
+treat_model2 <- lm(uhrswork ~ samesex + hisp + white + black + asian, data=treat)
+fit2 <- treat_model2$coefficients
+treat_model3 <- lm(work ~ samesex + hisp + white + black + asian, data=treat)
+fit3 <- treat_model3$coefficients
+alpha_1 <- c(fit1[2],fit2[2],fit3[2])
+control <- subset(Cal, morekids==0)
+control_model1 <- lm(incearn ~ samesex+ hisp + white + black + asian, data=control)
+fit1 <- control_model1$coefficients
+control_model2 <- lm(uhrswork ~ samesex + hisp + white + black + asian, data=control)
+fit2 <- control_model2$coefficients
+control_model3 <- lm(work ~ samesex + hisp + white + black + asian, data=control)
+fit3 <- control_model3$coefficients
+alpha_0 <- c(fit1[2],fit2[2],fit3[2])
+alpha_earn <- c(alpha_1[1],alpha_0[1])
+alpha_wage <- c(alpha_1[2],alpha_0[2])
+alpha_hrs <- c(alpha_1[3],alpha_0[3])
+alpha_earn
+alpha_wage
+alpha_hrs
+```
